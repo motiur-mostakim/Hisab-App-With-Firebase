@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hisab_app/src/features/edit_profile_screen.dart';
 
+import '../../core/services/transaction_service.dart';
+
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -10,15 +12,13 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-
   final FirebaseAuth auth = FirebaseAuth.instance;
+  final TransactionService _transactionService = TransactionService();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF111125),
-
-      /// 🔥 APP BAR
       appBar: AppBar(
         backgroundColor: Colors.black.withOpacity(0.6),
         elevation: 0,
@@ -37,13 +37,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-
-      /// 🔥 BODY
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
         child: Column(
           children: [
-            /// 🔥 PROFILE IMAGE
             Stack(
               alignment: Alignment.bottomRight,
               children: [
@@ -58,8 +55,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: CircleAvatar(
                     radius: 55,
                     backgroundImage: NetworkImage(
-                      auth.currentUser!.photoURL ??
-                          "https://i.pravatar.cc/300",
+                      auth.currentUser?.photoURL ?? "https://i.pravatar.cc/300",
                     ),
                   ),
                 ),
@@ -81,75 +77,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ],
             ),
-
             const SizedBox(height: 12),
-
             Text(
-             auth.currentUser?.displayName ?? "আব্দুর রহমান",
-              style: TextStyle(
+              auth.currentUser?.displayName ?? "ব্যবহারকারী",
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFFE2E0FC),
               ),
             ),
-
             const SizedBox(height: 4),
-
             Text(
-              auth.currentUser?.email ?? "motiurmostakim@gmail.com",
-              style: TextStyle(color: Colors.grey),
+              auth.currentUser?.email ?? "",
+              style: const TextStyle(color: Colors.grey),
             ),
-
             const SizedBox(height: 24),
+            StreamBuilder<Map<String, double>>(
+              stream: _transactionService.getDailyStats(),
+              builder: (context, snapshot) {
+                final stats = snapshot.data ?? {'income': 0.0, 'expense': 0.0};
+                final balance = (stats['income'] ?? 0.0) - (stats['expense'] ?? 0.0);
 
-            /// 🔥 SUMMARY CARD
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(24),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF60DCB2), Color(0xFF009672)],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "মোট সঞ্চয়",
-                    style: TextStyle(color: Colors.white70),
+                return Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF60DCB2), Color(0xFF009672)],
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: const [
-                      Text(
-                        "৳৪,৮৫,২০০",
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "মোট সঞ্চয়",
+                        style: TextStyle(color: Colors.white70),
                       ),
-                      SizedBox(width: 6),
-                      Text("BDT", style: TextStyle(color: Colors.white70)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Text(
+                            "\৳${balance.toStringAsFixed(2)}",
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text("BDT", style: TextStyle(color: Colors.white70)),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Row(
+                        children: [
+                          Icon(Icons.trending_up, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            "আপনার বর্তমান ব্যালেন্স",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          Spacer(),
+                          Icon(Icons.shield, color: Colors.white54),
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: const [
-                      Icon(Icons.trending_up, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        "+১২.৫% এই মাসে",
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      Spacer(),
-                      Icon(Icons.shield, color: Colors.white54),
-                    ],
-                  ),
-                ],
-              ),
+                );
+              },
             ),
-
             const SizedBox(height: 20),
 
             /// 🔥 MENU ITEMS
@@ -166,7 +162,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _menuItem(Icons.notifications, "নোটিফিকেশন"),
             _menuItem(Icons.payment, "মুদ্রা সেটিংস", trailing: "BDT"),
             _menuItem(Icons.lock, "নিরাপত্তা"),
-
             const SizedBox(height: 10),
 
             /// 🔥 DARK MODE
@@ -188,12 +183,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Switch(
                     value: true,
                     onChanged: (v) {},
-                    activeThumbColor: const Color(0xFF60DCB2),
+                    activeColor: const Color(0xFF60DCB2),
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 10),
 
             /// 🔥 LOGOUT
@@ -207,8 +201,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: Colors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  children: const [
+                child: const Row(
+                  children: [
                     Icon(Icons.logout, color: Colors.red),
                     SizedBox(width: 12),
                     Text(

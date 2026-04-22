@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -11,14 +10,15 @@ import '../../core/services/transaction_service.dart';
 import '../../core/widgets/more_category_bottom_sheet_widget.dart';
 
 class AddTransactionScreen extends StatefulWidget {
-  const AddTransactionScreen({super.key});
+  final bool initialIsExpense;
+  const AddTransactionScreen({super.key, this.initialIsExpense = true});
 
   @override
   State<AddTransactionScreen> createState() => _AddTransactionScreenState();
 }
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
-  bool isExpense = true;
+  late bool isExpense;
   Map<String, dynamic>? selectedCategory;
   File? receiptFile;
 
@@ -27,7 +27,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final TextEditingController dateController = TextEditingController();
   final TransactionService _transactionService = TransactionService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final ImagePicker _picker = ImagePicker();
+  // final ImagePicker _picker = ImagePicker();
 
   DateTime selectedDate = DateTime.now();
 
@@ -43,6 +43,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
+    isExpense = widget.initialIsExpense;
     dateController.text = _formatDate(DateTime.now());
   }
 
@@ -65,20 +66,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
-  // Future<void> _pickReceipt() async {
-  //   final picked = await _picker.pickImage(
-  //     source: ImageSource.gallery,
-  //     maxWidth: 1200,
-  //     maxHeight: 1200,
-  //     imageQuality: 80,
-  //   );
-  //   if (picked != null) {
-  //     setState(() {
-  //       receiptFile = File(picked.path);
-  //     });
-  //   }
-  // }
-
   Future<void> _saveTransaction() async {
     final amount = double.tryParse(amountController.text);
     final category = selectedCategory?['name'] ?? 'অন্যান্য';
@@ -100,15 +87,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     try {
       final transactionId = const Uuid().v4();
-      // String? receiptUrl;
-      //
-      // if (receiptFile != null) {
-      //   receiptUrl = await _transactionService.uploadReceipt(
-      //     receiptFile!,
-      //     userId,
-      //     transactionId,
-      //   );
-      // }
 
       final transaction = TransactionModel(
         id: transactionId,
@@ -119,7 +97,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         isExpense: isExpense,
         date: selectedDate,
         createdAt: DateTime.now(),
-        // receiptUrl: receiptUrl,
       );
 
       await _transactionService.addTransaction(transaction);
@@ -130,14 +107,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         const SnackBar(content: Text('লেনদেন সংরক্ষিত হয়েছে')),
       );
 
-      setState(() {
-        amountController.clear();
-        noteController.clear();
-        selectedCategory = null;
-        isExpense = true;
-        selectedDate = DateTime.now();
-        dateController.text = _formatDate(selectedDate);
-      });
+      Navigator.pop(context); // Close dialog after saving
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('ত্রুটি: $e')),
@@ -152,13 +122,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF111125),
         elevation: 0,
-        title: const Text("নতুন লেনদেন"),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 10),
-            child: Icon(Icons.notifications_none),
-          ),
-        ],
+        title: Text(isExpense ? "নতুন ব্যয়" : "নতুন আয়"),
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -179,6 +147,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   child: TextField(
                     controller: amountController,
                     keyboardType: TextInputType.number,
+                    autofocus: true,
                     style: const TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
@@ -218,10 +187,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 itemCount: categories.length,
                 itemBuilder: (context, index) {
                   final item = categories[index];
-                  final isSelected = selectedCategory == item ||
-                      (index == categories.length - 1 &&
-                          selectedCategory != null &&
-                          !categories.contains(selectedCategory));
+                  final isSelected = selectedCategory == item;
 
                   return GestureDetector(
                     onTap: () {
@@ -275,6 +241,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               controller: dateController,
               onTap: _selectDate,
               readOnly: true,
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: const Color(0xFF333348),
@@ -290,7 +257,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             const SizedBox(height: 5),
             TextField(
               controller: noteController,
-              maxLines: 3,
+              maxLines: 2,
+              style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 filled: true,
                 fillColor: const Color(0xFF333348),
@@ -302,34 +270,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 hintStyle: const TextStyle(color: Colors.grey),
               ),
             ),
-            // const SizedBox(height: 25),
-            // GestureDetector(
-            //   onTap: _pickReceipt,
-            //   child: Container(
-            //     height: 180,
-            //     width: double.infinity,
-            //     decoration: BoxDecoration(
-            //       color: const Color(0xFF1E1E32),
-            //       borderRadius: BorderRadius.circular(15),
-            //       border: Border.all(color: Colors.grey.shade700),
-            //     ),
-            //     child: receiptFile != null
-            //         ? ClipRRect(
-            //       borderRadius: BorderRadius.circular(15),
-            //       child: Image.file(
-            //         receiptFile!,
-            //         fit: BoxFit.cover,
-            //         width: double.infinity,
-            //       ),
-            //     )
-            //         : const Center(
-            //       child: Text(
-            //         "📷 রসিদ আপলোড করুন (ঐচ্ছিক)",
-            //         style: TextStyle(color: Colors.grey),
-            //       ),
-            //     ),
-            //   ),
-            // ),
             const SizedBox(height: 30),
             GestureDetector(
               onTap: _saveTransaction,
@@ -354,15 +294,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            Center(
-              child: TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  "বাতিল করুন",
-                  style: TextStyle(color: Colors.white54),
-                ),
-              ),
-            ),
           ],
         ),
       ),

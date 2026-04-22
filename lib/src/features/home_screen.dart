@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/model/transaction_model.dart';
 import '../../core/services/transaction_service.dart';
+import 'add_transaction_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -14,18 +15,40 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final FirebaseAuth auth = FirebaseAuth.instance;
   final TransactionService _transactionService = TransactionService();
-  final double monthlyBudget = 3000.0; // মাসিক বাজেট লিমিট
+  final double monthlyBudget = 3000.0;
 
   double _getMonthlyExpense(List<TransactionModel> transactions) {
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month, 1);
 
     return transactions
-        .where((txn) =>
-    txn.isExpense &&
-        txn.date.isAfter(monthStart) &&
-        txn.date.isBefore(DateTime.now()))
+        .where(
+          (txn) =>
+              txn.isExpense &&
+              txn.date.isAfter(monthStart) &&
+              txn.date.isBefore(DateTime.now()),
+        )
         .fold(0.0, (sum, txn) => sum + txn.amount);
+  }
+
+  void _showAddTransactionDialog(bool isExpense) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF0C0C1F),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: AddTransactionScreen(initialIsExpense: isExpense),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -38,10 +61,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: Row(
           children: [
             CircleAvatar(
-              backgroundImage: NetworkImage(auth.currentUser?.photoURL ?? "https://i.pravatar.cc/150?img=3"),
+              backgroundImage: NetworkImage(
+                auth.currentUser?.photoURL ?? "https://i.pravatar.cc/150?img=3",
+              ),
             ),
             const SizedBox(width: 10),
-            Text(auth.currentUser?.displayName ?? "", style: TextStyle(fontSize: 16)),
+            Text(
+              auth.currentUser?.displayName ?? "",
+              style: const TextStyle(fontSize: 16),
+            ),
           ],
         ),
         actions: const [
@@ -59,30 +87,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
               stream: _transactionService.getDailyStats(),
               builder: (context, snapshot) {
                 final stats = snapshot.data ?? {'income': 0.0, 'expense': 0.0};
-                final balance = (stats['income'] ?? 0.0) - (stats['expense'] ?? 0.0);
+                final balance =
+                    (stats['income'] ?? 0.0) - (stats['expense'] ?? 0.0);
 
                 return _BalanceSection(balance: balance);
               },
             ),
             const SizedBox(height: 20),
-            _SummaryCards(transactionService: _transactionService,),
+            Row(
+              children: [
+                Expanded(
+                  child: _ActionBtn(
+                    title: "আয়",
+                    icon: Icons.add_circle_outline,
+                    color: Colors.green,
+                    onTap: () => _showAddTransactionDialog(false),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _ActionBtn(
+                    title: "ব্যয়",
+                    icon: Icons.remove_circle_outline,
+                    color: Colors.red,
+                    onTap: () => _showAddTransactionDialog(true),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
 
-            /// 🚨 BUDGET ALERT
+            _SummaryCards(transactionService: _transactionService),
+            const SizedBox(height: 20),
             StreamBuilder<List<TransactionModel>>(
               stream: _transactionService.getTransactions(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
                   return const SizedBox.shrink();
                 }
-
                 final monthlyExpense = _getMonthlyExpense(snapshot.data!);
                 final isOverBudget = monthlyExpense > monthlyBudget;
                 final percentageUsed = (monthlyExpense / monthlyBudget) * 100;
-
                 return Column(
                   children: [
-                    /// Alert Box যদি বাজেট ছাড়িয়ে যায়
                     if (isOverBudget)
                       Container(
                         padding: const EdgeInsets.all(16),
@@ -128,10 +175,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ],
                         ),
                       ),
-
                     const SizedBox(height: 16),
-
-                    /// Budget Progress Bar
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -167,8 +211,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(10),
                             child: LinearProgressIndicator(
-                              value: (monthlyExpense / monthlyBudget)
-                                  .clamp(0.0, 1.0),
+                              value: (monthlyExpense / monthlyBudget).clamp(
+                                0.0,
+                                1.0,
+                              ),
                               minHeight: 8,
                               backgroundColor: Colors.grey.withOpacity(0.3),
                               valueColor: AlwaysStoppedAnimation<Color>(
@@ -205,9 +251,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
 
             const SizedBox(height: 20),
-
-            /// BOTTOM SECTION
             _BottomSection(transactionService: _transactionService),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionBtn extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionBtn({
+    required this.title,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.3)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              title,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
           ],
         ),
       ),
@@ -225,7 +314,10 @@ class _BalanceSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("বর্তমান মোট সম্পদ", style: TextStyle(color: Colors.white54)),
+        const Text(
+          "বর্তমান মোট সম্পদ",
+          style: TextStyle(color: Colors.white54),
+        ),
         const SizedBox(height: 5),
         Text(
           "\৳${balance.toStringAsFixed(2)}",
@@ -236,28 +328,6 @@ class _BalanceSection extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _ChartCard extends StatelessWidget {
-  const _ChartCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 220,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E1E32),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Center(
-        child: Text(
-          "📊 Chart এখানে হবে (fl_chart use করো)",
-          style: TextStyle(color: Colors.white54),
-        ),
-      ),
     );
   }
 }
@@ -381,7 +451,8 @@ class _BottomSection extends StatelessWidget {
                 return _TransactionItem(
                   title: txn.category,
                   subtitle: txn.note,
-                  amount: "${txn.isExpense ? '-' : '+'}\৳${txn.amount.toStringAsFixed(2)}",
+                  amount:
+                      "${txn.isExpense ? '-' : '+'}\৳${txn.amount.toStringAsFixed(2)}",
                   isExpense: txn.isExpense,
                 );
               },

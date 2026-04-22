@@ -1,14 +1,100 @@
+import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
-class EditProfileScreen extends StatelessWidget {
+class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
   @override
+  State<EditProfileScreen> createState() => _EditProfileScreenState();
+}
+
+class _EditProfileScreenState extends State<EditProfileScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
+  final ImagePicker _picker = ImagePicker();
+
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  File? _imageFile;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = _auth.currentUser;
+    _nameController = TextEditingController(text: user?.displayName ?? "");
+    _emailController = TextEditingController(text: user?.email ?? "");
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 50,
+    );
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("অনুগ্রহ করে আপনার নাম লিখুন")),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return;
+
+      String? photoUrl = user.photoURL;
+
+      // ছবি আপলোড (যদি পরিবর্তন করা হয়)
+      if (_imageFile != null) {
+        final ref = _storage.ref().child('user_profiles/${user.uid}.jpg');
+        await ref.putFile(_imageFile!);
+        photoUrl = await ref.getDownloadURL();
+      }
+
+      // প্রোফাইল আপডেট
+      await user.updateDisplayName(_nameController.text);
+      if (photoUrl != null) {
+        await user.updatePhotoURL(photoUrl);
+      }
+
+      // রিফ্রেশ করার জন্য ইউজারকে রিলোড করা
+      await user.reload();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("প্রোফাইল সফলভাবে আপডেট করা হয়েছে")),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("ত্রুটি: $e")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final user = _auth.currentUser;
+
     return Scaffold(
       backgroundColor: const Color(0xFF111125),
-
-      /// 🔥 APP BAR
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -24,161 +110,177 @@ class EditProfileScreen extends StatelessWidget {
           ),
         ),
       ),
-
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
-        child: Column(
-          children: [
-            /// 🔥 PROFILE IMAGE
-            Column(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
+            child: Column(
               children: [
-                Stack(
-                  alignment: Alignment.bottomRight,
+                /// 🔥 PROFILE IMAGE
+                Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF60DCB2), Color(0xFF333348)],
-                        ),
-                      ),
-                      child: const CircleAvatar(
-                        radius: 60,
-                        backgroundImage: NetworkImage(
-                          "https://lh3.googleusercontent.com/aida-public/AB6AXuBo9_adZC6MgUyZjOGOlb5mQa4uHHShmT7QbZjV49wCwE-MSoCVag_hF0J4hVnPuh84GYg--yZ3g9vM14Hae_DFtWV1T2mTJ4BBvNTsMAl_s7QdiKyu-r3AYmQjSX6-ypk62gPLToNNQXULGNLtIQOwBqfFfxiv05AsiA3Rp-7LTQSaiRzBXO0ZdVwzunorZUKZC0_skhicQ2cluCnP5BAXCQmvwhfOFJG3PAI-VrhyJQklYYic-B_-zT0WIcraGlH8hdDn8BwLXtA",
-                        ),
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [Color(0xFF60DCB2), Color(0xFF009672)],
-                        ),
-                      ),
-                      child: const Icon(Icons.edit, size: 18),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  "আপনার ছবি পরিবর্তন করুন",
-                  style: TextStyle(color: Colors.grey),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-
-            /// 🔥 FORM FIELDS
-            _inputField(
-              icon: Icons.person,
-              label: "পুরো নাম",
-              hint: "আপনার নাম লিখুন",
-              initialValue: "আন্দুর রহমান",
-            ),
-
-            _inputField(
-              icon: Icons.mail,
-              label: "ইমেইল ঠিকানা",
-              hint: "আপনার ইমেইল",
-              initialValue: "rahman.abdur@email.com",
-            ),
-
-            _inputField(
-              icon: Icons.call,
-              label: "ফোন নম্বর",
-              hint: "+৮৮০ ১xxx xxxxxx",
-            ),
-
-            const SizedBox(height: 30),
-
-            /// 🔥 SAVE BUTTON
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(50),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF60DCB2), Color(0xFF009672)],
-                ),
-              ),
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(50),
-                  ),
-                ),
-                child: const Text(
-                  "পরিবর্তন সংরক্ষণ করুন",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            /// 🔥 CANCEL BUTTON
-            TextButton(
-              onPressed: () {},
-              child: const Text(
-                "বাতিল করুন",
-                style: TextStyle(color: Colors.redAccent),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            /// 🔥 SECURITY CARD
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A2E),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: const [
-                  Icon(Icons.security, color: Color(0xFF60DCB2)),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Stack(
+                      alignment: Alignment.bottomRight,
                       children: [
-                        Text(
-                          "নিরাপত্তা টিপস",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [Color(0xFF60DCB2), Color(0xFF333348)],
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 60,
+                            backgroundImage: _imageFile != null
+                                ? FileImage(_imageFile!)
+                                : NetworkImage(
+                                    user?.photoURL ??
+                                        "https://i.pravatar.cc/300",
+                                  ) as ImageProvider,
                           ),
                         ),
-                        SizedBox(height: 4),
-                        Text(
-                          "আপনার অ্যাকাউন্ট সুরক্ষিত রাখতে নিয়মিত পাসওয়ার্ড পরিবর্তন করুন।",
-                          style: TextStyle(color: Colors.grey),
+                        GestureDetector(
+                          onTap: _pickImage,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [Color(0xFF60DCB2), Color(0xFF009672)],
+                              ),
+                            ),
+                            child: const Icon(Icons.camera_alt,
+                                size: 18, color: Color(0xFF003829)),
+                          ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      "আপনার ছবি পরিবর্তন করুন",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 30),
+
+                /// 🔥 FORM FIELDS
+                _inputField(
+                  controller: _nameController,
+                  icon: Icons.person,
+                  label: "পুরো নাম",
+                  hint: "আপনার নাম লিখুন",
+                ),
+
+                _inputField(
+                  controller: _emailController,
+                  icon: Icons.mail,
+                  label: "ইমেইল ঠিকানা",
+                  hint: "আপনার ইমেইল",
+                  readOnly: true,
+                ),
+
+                const SizedBox(height: 30),
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(50),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF60DCB2), Color(0xFF009672)],
+                    ),
                   ),
-                ],
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _saveProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Color(0xFF003829),
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            "পরিবর্তন সংরক্ষণ করুন",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF003829),
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    "বাতিল করুন",
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A2E),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.security, color: Color(0xFF60DCB2)),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "নিরাপত্তা টিপস",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              "আপনার অ্যাকাউন্ট সুরক্ষিত রাখতে নিয়মিত পাসওয়ার্ড পরিবর্তন করুন।",
+                              style: TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_isLoading)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFF60DCB2)),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
-
-  /// 🔥 REUSABLE INPUT FIELD
   Widget _inputField({
+    required TextEditingController controller,
     required IconData icon,
     required String label,
     required String hint,
-    String? initialValue,
+    bool readOnly = false,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -198,8 +300,11 @@ class EditProfileScreen extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: TextFormField(
-                  initialValue: initialValue,
-                  style: const TextStyle(color: Colors.white),
+                  controller: controller,
+                  readOnly: readOnly,
+                  style: TextStyle(
+                    color: readOnly ? Colors.white54 : Colors.white,
+                  ),
                   decoration: InputDecoration(
                     hintText: hint,
                     hintStyle: const TextStyle(color: Colors.grey),
@@ -212,5 +317,12 @@ class EditProfileScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
   }
 }

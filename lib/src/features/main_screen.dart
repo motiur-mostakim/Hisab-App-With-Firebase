@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:hisab_app/src/features/note_screen.dart';
 import 'package:hisab_app/src/features/profile_screen.dart';
 import 'package:hisab_app/src/features/report_screen.dart';
 
-import 'add_transaction_screen.dart';
 import 'history_screen.dart';
 import 'home_screen.dart';
 
@@ -19,7 +19,7 @@ class _MainScreenState extends State<MainScreen> {
   final screens = const [
     DashboardScreen(),
     HistoryScreen(),
-    AddTransactionScreen(),
+    NoteScreen(),
     ReportScreen(),
     ProfileScreen(),
   ];
@@ -28,9 +28,9 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: currentIndex, children: screens),
-
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
+        type: BottomNavigationBarType.fixed,
         backgroundColor: const Color(0xFF111125),
         selectedItemColor: const Color(0xFF60DCB2),
         unselectedItemColor: Colors.grey,
@@ -46,8 +46,8 @@ class _MainScreenState extends State<MainScreen> {
           ),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: "ইতিহাস"),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add_circle),
-            label: "যোগ করুন",
+            icon: Icon(Icons.note_alt),
+            label: "নোট",
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.bar_chart),

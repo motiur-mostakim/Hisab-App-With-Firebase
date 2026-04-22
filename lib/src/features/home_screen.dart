@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../core/model/transaction_model.dart';
 import '../../core/services/transaction_service.dart';
 import 'add_transaction_screen.dart';
+import 'calculator_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -15,7 +16,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final FirebaseAuth auth = FirebaseAuth.instance;
   final TransactionService _transactionService = TransactionService();
-  final double monthlyBudget = 3000.0;
+  final double monthlyBudget = 3000.0; // মাসিক বাজেট লিমিট
 
   double _getMonthlyExpense(List<TransactionModel> transactions) {
     final now = DateTime.now();
@@ -51,6 +52,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  void _showCalculator() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CalculatorScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,17 +91,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            StreamBuilder<Map<String, double>>(
-              stream: _transactionService.getDailyStats(),
-              builder: (context, snapshot) {
-                final stats = snapshot.data ?? {'income': 0.0, 'expense': 0.0};
-                final balance =
-                    (stats['income'] ?? 0.0) - (stats['expense'] ?? 0.0);
-
-                return _BalanceSection(balance: balance);
-              },
-            ),
-            const SizedBox(height: 20),
+            // Top Horizontally buttons for Income and Expense
             Row(
               children: [
                 Expanded(
@@ -117,6 +115,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             const SizedBox(height: 20),
 
+            StreamBuilder<Map<String, double>>(
+              stream: _transactionService.getDailyStats(),
+              builder: (context, snapshot) {
+                final stats = snapshot.data ?? {'income': 0.0, 'expense': 0.0};
+                final balance =
+                    (stats['income'] ?? 0.0) - (stats['expense'] ?? 0.0);
+
+                return _BalanceSection(balance: balance);
+              },
+            ),
+            const SizedBox(height: 20),
             _SummaryCards(transactionService: _transactionService),
             const SizedBox(height: 20),
             StreamBuilder<List<TransactionModel>>(
@@ -254,6 +263,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
             _BottomSection(transactionService: _transactionService),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showCalculator,
+        backgroundColor: const Color(0xFF60DCB2),
+        child: const Icon(Icons.calculate, color: Color(0xFF003829)),
       ),
     );
   }

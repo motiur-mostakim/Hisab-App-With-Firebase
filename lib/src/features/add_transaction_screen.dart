@@ -168,7 +168,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             Row(
               children: [
                 const Text(
-                  "\$",
+                  "\৳",
                   style: TextStyle(
                     fontSize: 40,
                     fontWeight: FontWeight.bold,

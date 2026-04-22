@@ -148,7 +148,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 subtitle:
                                 "${txn.date.hour}:${txn.date.minute.toString().padLeft(2, '0')} • ${txn.note}",
                                 amount:
-                                "${txn.isExpense ? '-' : '+'}\$${txn.amount.toStringAsFixed(2)}",
+                                "${txn.isExpense ? '-' : '+'}\৳${txn.amount.toStringAsFixed(2)}",
                                 isExpense: txn.isExpense,
                               );
                             }).toList(),

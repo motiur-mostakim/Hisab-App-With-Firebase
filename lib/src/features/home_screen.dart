@@ -41,7 +41,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               backgroundImage: NetworkImage(auth.currentUser?.photoURL ?? "https://i.pravatar.cc/150?img=3"),
             ),
             const SizedBox(width: 10),
-            const Text("দ্য ফ্লুইড আর্কিটেক্ট", style: TextStyle(fontSize: 16)),
+            Text(auth.currentUser?.displayName ?? "", style: TextStyle(fontSize: 16)),
           ],
         ),
         actions: const [
@@ -55,7 +55,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            /// BALANCE
             StreamBuilder<Map<String, double>>(
               stream: _transactionService.getDailyStats(),
               builder: (context, snapshot) {

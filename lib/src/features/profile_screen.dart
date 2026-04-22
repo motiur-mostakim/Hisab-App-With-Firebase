@@ -1,0 +1,260 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:hisab_app/src/features/edit_profile_screen.dart';
+
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+
+  final FirebaseAuth auth = FirebaseAuth.instance;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF111125),
+
+      /// 🔥 APP BAR
+      appBar: AppBar(
+        backgroundColor: Colors.black.withOpacity(0.6),
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          "প্রোফাইল",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFFE2E0FC),
+          ),
+        ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: Icon(Icons.settings, color: Color(0xFF60DCB2)),
+          ),
+        ],
+      ),
+
+      /// 🔥 BODY
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+        child: Column(
+          children: [
+            /// 🔥 PROFILE IMAGE
+            Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF60DCB2), Color(0xFF009672)],
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    radius: 55,
+                    backgroundImage: NetworkImage(
+                      auth.currentUser!.photoURL ??
+                          "https://i.pravatar.cc/300",
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const EditProfileScreen(),
+                    ),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Color(0xFF60DCB2),
+                    ),
+                    child: const Icon(Icons.edit, size: 16),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            Text(
+             auth.currentUser?.displayName ?? "আব্দুর রহমান",
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFFE2E0FC),
+              ),
+            ),
+
+            const SizedBox(height: 4),
+
+            Text(
+              auth.currentUser?.email ?? "motiurmostakim@gmail.com",
+              style: TextStyle(color: Colors.grey),
+            ),
+
+            const SizedBox(height: 24),
+
+            /// 🔥 SUMMARY CARD
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(24),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF60DCB2), Color(0xFF009672)],
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "মোট সঞ্চয়",
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: const [
+                      Text(
+                        "৳৪,৮৫,২০০",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Text("BDT", style: TextStyle(color: Colors.white70)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: const [
+                      Icon(Icons.trending_up, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text(
+                        "+১২.৫% এই মাসে",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      Spacer(),
+                      Icon(Icons.shield, color: Colors.white54),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            /// 🔥 MENU ITEMS
+            _menuItem(
+              Icons.person,
+              "প্রোফাইল এডিট করুন",
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const EditProfileScreen(),
+                ),
+              ),
+            ),
+            _menuItem(Icons.notifications, "নোটিফিকেশন"),
+            _menuItem(Icons.payment, "মুদ্রা সেটিংস", trailing: "BDT"),
+            _menuItem(Icons.lock, "নিরাপত্তা"),
+
+            const SizedBox(height: 10),
+
+            /// 🔥 DARK MODE
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E1E32),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.dark_mode, color: Color(0xFF60DCB2)),
+                  const SizedBox(width: 12),
+                  const Text(
+                    "ডার্ক মোড",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  const Spacer(),
+                  Switch(
+                    value: true,
+                    onChanged: (v) {},
+                    activeThumbColor: const Color(0xFF60DCB2),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            /// 🔥 LOGOUT
+            InkWell(
+              onTap: () async {
+                await auth.signOut();
+              },
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.logout, color: Colors.red),
+                    SizedBox(width: 12),
+                    Text(
+                      "লগআউট",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _menuItem(
+    IconData icon,
+    String title, {
+    String? trailing,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E1E32),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFF60DCB2)),
+            const SizedBox(width: 12),
+            Text(title, style: const TextStyle(color: Colors.white)),
+            const Spacer(),
+            if (trailing != null)
+              Text(trailing, style: const TextStyle(color: Colors.white70)),
+            const Icon(Icons.chevron_right, color: Colors.grey),
+          ],
+        ),
+      ),
+    );
+  }
+}

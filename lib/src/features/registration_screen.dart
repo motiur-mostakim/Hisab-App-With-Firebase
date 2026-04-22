@@ -1,0 +1,237 @@
+import 'package:flutter/material.dart';
+
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
+
+  @override
+  State<RegisterScreen> createState() => _RegisterScreenState();
+}
+
+class _RegisterScreenState extends State<RegisterScreen> {
+  bool isChecked = false;
+  bool obscure1 = true;
+  bool obscure2 = true;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF1A1A2E),
+      body: SafeArea(
+        child: Row(
+          children: [
+            /// 🔥 LEFT SIDE (Only Web/Tablet)
+            if (MediaQuery.of(context).size.width > 800)
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.all(40),
+                  color: const Color(0xFF0C0C1F),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Icon(
+                        Icons.account_balance_wallet,
+                        color: Color(0xFF60DCB2),
+                        size: 50,
+                      ),
+                      SizedBox(height: 20),
+                      Text(
+                        "অর্থ সঞ্চয়",
+                        style: TextStyle(
+                          color: Color(0xFF60DCB2),
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      Text(
+                        "আপনার সম্পদ,\nআপনার নিয়ন্ত্রণ।",
+                        style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 10),
+                      Text(
+                        "সহজে আপনার অর্থ ব্যবস্থাপনা করুন",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            /// 🔥 RIGHT SIDE (Form)
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    /// TITLE
+                    const Text(
+                      "অ্যাকাউন্ট তৈরি করুন",
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    const Text(
+                      "আপনার আর্থিক ভবিষ্যৎ সুরক্ষিত করতে আজই যুক্ত হোন",
+                      style: TextStyle(color: Colors.white70),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    /// FORM
+                    _input("পুরো নাম", Icons.person, "আপনার নাম লিখুন"),
+                    _input("ইমেল ঠিকানা", Icons.mail, "example@email.com"),
+                    _input(
+                      "পাসওয়ার্ড",
+                      Icons.lock,
+                      "••••••••",
+                      isPassword: true,
+                      isFirst: true,
+                    ),
+                    _input(
+                      "পাসওয়ার্ড নিশ্চিত করুন",
+                      Icons.key,
+                      "••••••••",
+                      isPassword: true,
+                      isFirst: false,
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    /// CHECKBOX
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: isChecked,
+                          activeColor: const Color(0xFF60DCB2),
+                          onChanged: (v) {
+                            setState(() {
+                              isChecked = v!;
+                            });
+                          },
+                        ),
+                        const Expanded(
+                          child: Text(
+                            "আমি সকল শর্তাবলী মেনে নিচ্ছি",
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    /// BUTTON
+                    Container(
+                      width: double.infinity,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF60DCB2), Color(0xFF009672)],
+                        ),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          "রেজিস্ট্রেশন করুন →",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF003829),
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    /// LOGIN LINK
+                    Center(
+                      child: RichText(
+                        text: const TextSpan(
+                          text: "ইতিমধ্যে অ্যাকাউন্ট আছে? ",
+                          style: TextStyle(color: Colors.white70),
+                          children: [
+                            TextSpan(
+                              text: "লগইন করুন",
+                              style: TextStyle(
+                                color: Color(0xFF60DCB2),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 🔥 INPUT FIELD
+  Widget _input(
+    String label,
+    IconData icon,
+    String hint, {
+    bool isPassword = false,
+    bool isFirst = true,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.white60)),
+          const SizedBox(height: 5),
+          TextField(
+            obscureText: isPassword ? (isFirst ? obscure1 : obscure2) : false,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              prefixIcon: Icon(icon, color: Colors.grey),
+              suffixIcon: isPassword
+                  ? IconButton(
+                      icon: Icon(
+                        (isFirst ? obscure1 : obscure2)
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          if (isFirst) {
+                            obscure1 = !obscure1;
+                          } else {
+                            obscure2 = !obscure2;
+                          }
+                        });
+                      },
+                    )
+                  : null,
+              hintText: hint,
+              hintStyle: const TextStyle(color: Colors.grey),
+              filled: true,
+              fillColor: const Color(0xFF333348),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

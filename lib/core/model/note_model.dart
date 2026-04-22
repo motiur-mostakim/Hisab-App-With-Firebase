@@ -7,6 +7,7 @@ class NoteModel {
   final String content;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final DateTime? alarmTime;
 
   NoteModel({
     required this.id,
@@ -15,6 +16,7 @@ class NoteModel {
     required this.content,
     required this.createdAt,
     required this.updatedAt,
+    this.alarmTime,
   });
 
   Map<String, dynamic> toMap() {
@@ -25,6 +27,7 @@ class NoteModel {
       'content': content,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'alarmTime': alarmTime != null ? Timestamp.fromDate(alarmTime!) : null,
     };
   }
 
@@ -36,6 +39,9 @@ class NoteModel {
       content: map['content'] ?? '',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       updatedAt: (map['updatedAt'] as Timestamp).toDate(),
+      alarmTime: map['alarmTime'] != null
+          ? (map['alarmTime'] as Timestamp).toDate()
+          : null,
     );
   }
 }

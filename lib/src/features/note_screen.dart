@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/model/note_model.dart';
 import '../../core/services/note_service.dart';
+import '../../core/services/notification_service.dart';
 
 class NoteScreen extends StatefulWidget {
   const NoteScreen({super.key});
@@ -13,7 +14,14 @@ class NoteScreen extends StatefulWidget {
 
 class _NoteScreenState extends State<NoteScreen> {
   final NoteService _noteService = NoteService();
+  final NotificationService _notificationService = NotificationService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationService.initNotification();
+  }
 
   String _formatDate(DateTime date) {
     return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
@@ -23,8 +31,12 @@ class _NoteScreenState extends State<NoteScreen> {
     final titleController = TextEditingController(text: note?.title);
     final contentController = TextEditingController(text: note?.content);
     DateTime selectedDate = note?.createdAt ?? DateTime.now();
-    final dateController = TextEditingController(
-      text: _formatDate(selectedDate),
+    DateTime? alarmTime = note?.alarmTime;
+
+    final dateController =
+        TextEditingController(text: _formatDate(selectedDate));
+    final alarmController = TextEditingController(
+      text: alarmTime != null ? _formatDate(alarmTime) : "অ্যালার্ম নেই",
     );
 
     showDialog(
@@ -33,15 +45,12 @@ class _NoteScreenState extends State<NoteScreen> {
         builder: (context, setDialogState) {
           return AlertDialog(
             backgroundColor: const Color(0xFF1E1E32),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: Text(
               note == null ? "নতুন নোট" : "নোট এডিট করুন",
               style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+                  color: Colors.white, fontWeight: FontWeight.bold),
             ),
             content: SingleChildScrollView(
               child: Column(
@@ -54,8 +63,7 @@ class _NoteScreenState extends State<NoteScreen> {
                       hintText: "শিরোনাম",
                       hintStyle: TextStyle(color: Colors.grey),
                       enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white24),
-                      ),
+                          borderSide: BorderSide(color: Colors.white24)),
                     ),
                   ),
                   const SizedBox(height: 15),
@@ -86,14 +94,61 @@ class _NoteScreenState extends State<NoteScreen> {
                     decoration: const InputDecoration(
                       hintText: "তারিখ নির্বাচন করুন",
                       hintStyle: TextStyle(color: Colors.grey),
-                      suffixIcon: Icon(
-                        Icons.calendar_today,
-                        color: Colors.grey,
-                        size: 20,
-                      ),
+                      suffixIcon: Icon(Icons.calendar_today,
+                          color: Colors.grey, size: 20),
                       enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.white24),
-                      ),
+                          borderSide: BorderSide(color: Colors.white24)),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  TextField(
+                    controller: alarmController,
+                    readOnly: true,
+                    style: const TextStyle(color: Colors.white),
+                    onTap: () async {
+                      final pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: alarmTime ?? DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2100),
+                      );
+                      if (pickedDate != null) {
+                        final pickedTime = await showTimePicker(
+                          context: context,
+                          initialTime:
+                              TimeOfDay.fromDateTime(alarmTime ?? DateTime.now()),
+                        );
+                        if (pickedTime != null) {
+                          setDialogState(() {
+                            alarmTime = DateTime(
+                              pickedDate.year,
+                              pickedDate.month,
+                              pickedDate.day,
+                              pickedTime.hour,
+                              pickedTime.minute,
+                            );
+                            alarmController.text = _formatDate(alarmTime!);
+                          });
+                        }
+                      }
+                    },
+                    decoration: InputDecoration(
+                      hintText: "অ্যালার্ম সেট করুন",
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      suffixIcon: alarmTime != null
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.red),
+                              onPressed: () {
+                                setDialogState(() {
+                                  alarmTime = null;
+                                  alarmController.text = "অ্যালার্ম নেই";
+                                });
+                              },
+                            )
+                          : const Icon(Icons.alarm,
+                              color: Colors.grey, size: 20),
+                      enabledBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.white24)),
                     ),
                   ),
                   const SizedBox(height: 15),
@@ -113,51 +168,55 @@ class _NoteScreenState extends State<NoteScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  "বাতিল",
-                  style: TextStyle(color: Colors.grey),
-                ),
+                child:
+                    const Text("বাতিল", style: TextStyle(color: Colors.grey)),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF60DCB2),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                      borderRadius: BorderRadius.circular(10)),
                 ),
                 onPressed: () async {
                   if (titleController.text.isEmpty) return;
 
                   final userId = _auth.currentUser?.uid ?? '';
+                  final noteId = note?.id ?? const Uuid().v4();
+
+                  final newNote = NoteModel(
+                    id: noteId,
+                    userId: userId,
+                    title: titleController.text,
+                    content: contentController.text,
+                    createdAt: selectedDate,
+                    updatedAt: DateTime.now(),
+                    alarmTime: alarmTime,
+                  );
+
                   if (note == null) {
-                    final newNote = NoteModel(
-                      id: const Uuid().v4(),
-                      userId: userId,
-                      title: titleController.text,
-                      content: contentController.text,
-                      createdAt: selectedDate,
-                      updatedAt: DateTime.now(),
-                    );
                     await _noteService.addNote(newNote);
                   } else {
-                    final updatedNote = NoteModel(
-                      id: note.id,
-                      userId: userId,
-                      title: titleController.text,
-                      content: contentController.text,
-                      createdAt: selectedDate,
-                      updatedAt: DateTime.now(),
-                    );
-                    await _noteService.updateNote(updatedNote);
+                    await _noteService.updateNote(newNote);
                   }
+
+                  // Alarm Notification logic
+                  if (alarmTime != null && alarmTime!.isAfter(DateTime.now())) {
+                    await _notificationService.scheduleNotification(
+                      noteId.hashCode,
+                      "Note Reminder: ${titleController.text}",
+                      contentController.text,
+                      alarmTime!,
+                    );
+                  } else {
+                    await _notificationService.cancelNotification(noteId.hashCode);
+                  }
+
                   if (mounted) Navigator.pop(context);
                 },
                 child: Text(
                   note == null ? "সংরক্ষণ" : "আপডেট",
                   style: const TextStyle(
-                    color: Color(0xFF003829),
-                    fontWeight: FontWeight.bold,
-                  ),
+                      color: Color(0xFF003829), fontWeight: FontWeight.bold),
                 ),
               ),
             ],
@@ -187,6 +246,7 @@ class _NoteScreenState extends State<NoteScreen> {
               child: Text("কোনো নোট নেই", style: TextStyle(color: Colors.grey)),
             );
           }
+
           final notes = snapshot.data!;
           return ListView.builder(
             padding: const EdgeInsets.all(12),
@@ -222,61 +282,49 @@ class _NoteScreenState extends State<NoteScreen> {
                               IconButton(
                                 constraints: const BoxConstraints(),
                                 padding: EdgeInsets.zero,
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.blueAccent,
-                                  size: 20,
-                                ),
+                                icon: const Icon(Icons.edit,
+                                    color: Colors.blueAccent, size: 20),
                                 onPressed: () => _showNoteDialog(note: note),
                               ),
                               const SizedBox(width: 10),
                               IconButton(
                                 constraints: const BoxConstraints(),
                                 padding: EdgeInsets.zero,
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.redAccent,
-                                  size: 20,
-                                ),
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.redAccent, size: 20),
                                 onPressed: () async {
                                   final confirm = await showDialog<bool>(
                                     context: context,
                                     builder: (context) => AlertDialog(
                                       backgroundColor: const Color(0xFF1E1E32),
-                                      title: const Text(
-                                        "ডিলিট নিশ্চিত করুন",
-                                        style: TextStyle(color: Colors.white),
-                                      ),
+                                      title: const Text("ডিলিট নিশ্চিত করুন",
+                                          style:
+                                              TextStyle(color: Colors.white)),
                                       content: const Text(
-                                        "আপনি কি এই নোটটি ডিলিট করতে চান?",
-                                        style: TextStyle(color: Colors.white70),
-                                      ),
+                                          "আপনি কি এই নোটটি ডিলিট করতে চান?",
+                                          style:
+                                              TextStyle(color: Colors.white70)),
                                       actions: [
                                         TextButton(
                                           onPressed: () =>
                                               Navigator.pop(context, false),
-                                          child: const Text(
-                                            "না",
-                                            style: TextStyle(
-                                              color: Colors.grey,
-                                            ),
-                                          ),
+                                          child: const Text("না",
+                                              style: TextStyle(
+                                                  color: Colors.grey)),
                                         ),
                                         TextButton(
                                           onPressed: () =>
                                               Navigator.pop(context, true),
-                                          child: const Text(
-                                            "হ্যাঁ",
-                                            style: TextStyle(
-                                              color: Colors.redAccent,
-                                            ),
-                                          ),
+                                          child: const Text("হ্যাঁ",
+                                              style: TextStyle(
+                                                  color: Colors.redAccent)),
                                         ),
                                       ],
                                     ),
                                   );
                                   if (confirm == true) {
                                     await _noteService.deleteNote(note.id);
+                                    await _notificationService.cancelNotification(note.id.hashCode);
                                   }
                                 },
                               ),
@@ -291,20 +339,34 @@ class _NoteScreenState extends State<NoteScreen> {
                       ),
                       const SizedBox(height: 12),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(
-                            Icons.access_time,
-                            color: Colors.grey,
-                            size: 14,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _formatDate(note.createdAt),
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                            ),
+                          if (note.alarmTime != null)
+                            Row(
+                              children: [
+                                const Icon(Icons.alarm,
+                                    color: Color(0xFF60DCB2), size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatDate(note.alarmTime!),
+                                  style: const TextStyle(
+                                      color: Color(0xFF60DCB2), fontSize: 12),
+                                ),
+                              ],
+                            )
+                          else
+                            const SizedBox(),
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time,
+                                  color: Colors.grey, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                _formatDate(note.createdAt),
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 12),
+                              ),
+                            ],
                           ),
                         ],
                       ),

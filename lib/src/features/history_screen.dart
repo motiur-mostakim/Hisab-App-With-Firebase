@@ -16,18 +16,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   String _filterType = "দৈনিক"; // দৈনিক, মাসিক, বার্ষিক, কাস্টম
-  List<TransactionModel> _filteredTransactions = [];
 
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(_filterTransactions);
+    _searchController.addListener(() => setState(() {}));
   }
 
   List<TransactionModel> _getFilteredByDate(List<TransactionModel> transactions) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
     final monthStart = DateTime(now.year, now.month, 1);
     final yearStart = DateTime(now.year, 1, 1);
 
@@ -38,30 +36,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
         case "দৈনিক":
           return txnDate == today;
         case "মাসিক":
-          return txn.date.isAfter(monthStart);
+          return txn.date.isAfter(monthStart.subtract(const Duration(days: 1)));
         case "বার্ষিক":
-          return txn.date.isAfter(yearStart);
+          return txn.date.isAfter(yearStart.subtract(const Duration(days: 1)));
         default:
           return true;
       }
     }).toList();
   }
 
-  void _filterTransactions() {
-    // search এবং date filter combined
-  }
-
-  Map<String, List<TransactionModel>> _groupByDate(
-      List<TransactionModel> transactions) {
+  Map<String, List<TransactionModel>> _groupByDate(List<TransactionModel> transactions) {
     final grouped = <String, List<TransactionModel>>{};
-
     for (var txn in transactions) {
       final date = txn.date;
       final today = DateTime.now();
       final yesterday = today.subtract(const Duration(days: 1));
       final todayDate = DateTime(today.year, today.month, today.day);
-      final yesterdayDate =
-      DateTime(yesterday.year, yesterday.month, yesterday.day);
+      final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
       final txnDate = DateTime(date.year, date.month, date.day);
 
       String key;
@@ -76,17 +67,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
       grouped.putIfAbsent(key, () => []);
       grouped[key]!.add(txn);
     }
-
     return grouped;
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0C0C1F),
       body: Column(
         children: [
-          _topBar(),
+          _topBar(isDark),
           Expanded(
             child: StreamBuilder<List<TransactionModel>>(
               stream: _transactionService.getTransactions(),
@@ -96,27 +87,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Text(
                       "কোনো লেনদেন নেই",
-                      style: TextStyle(color: Colors.white54),
+                      style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
                     ),
                   );
                 }
 
-                var allTransactions = snapshot.data!;
+                var dateFiltered = _getFilteredByDate(snapshot.data!);
 
-                // Date filter
-                var dateFiltered =
-                _getFilteredByDate(allTransactions);
-
-                // Search filter
                 if (_searchController.text.isNotEmpty) {
                   final query = _searchController.text.toLowerCase();
                   dateFiltered = dateFiltered
                       .where((txn) =>
-                  txn.category.toLowerCase().contains(query) ||
-                      txn.note.toLowerCase().contains(query))
+                          txn.category.toLowerCase().contains(query) ||
+                          txn.note.toLowerCase().contains(query))
                       .toList();
                 }
 
@@ -126,13 +112,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 return ListView(
                   padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
                   children: [
-                    _searchSection(),
+                    _searchSection(isDark),
                     const SizedBox(height: 20),
                     if (dateFiltered.isEmpty)
-                      const Center(
+                      Center(
                         child: Text(
                           "কোনো মিলিত লেনদেন নেই",
-                          style: TextStyle(color: Colors.white54),
+                          style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
                         ),
                       )
                     else
@@ -143,12 +129,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             _groupTitle(date),
                             ...grouped[date]!.map((txn) {
                               return _transactionItem(
+                                isDark,
                                 icon: _getCategoryIcon(txn.category),
                                 title: txn.category,
-                                subtitle:
-                                "${txn.date.hour}:${txn.date.minute.toString().padLeft(2, '0')} • ${txn.note}",
-                                amount:
-                                "${txn.isExpense ? '-' : '+'}\৳${txn.amount.toStringAsFixed(2)}",
+                                subtitle: "${txn.date.hour}:${txn.date.minute.toString().padLeft(2, '0')} • ${txn.note}",
+                                amount: "${txn.isExpense ? '-' : '+'}\৳${txn.amount.toStringAsFixed(2)}",
                                 isExpense: txn.isExpense,
                               );
                             }).toList(),
@@ -168,25 +153,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   IconData _getCategoryIcon(String category) {
     switch (category) {
-      case "খাবার":
-        return Icons.restaurant;
-      case "কেনাকাটা":
-        return Icons.shopping_bag;
-      case "পরিবহন":
-        return Icons.directions_car;
-      case "বিনোদন":
-        return Icons.movie;
-      case "স্বাস্থ্য":
-        return Icons.health_and_safety;
-      default:
-        return Icons.category;
+      case "খাবার": return Icons.restaurant;
+      case "কেনাকাটা": return Icons.shopping_bag;
+      case "পরিবহন": return Icons.directions_car;
+      case "বিনোদন": return Icons.movie;
+      case "স্বাস্থ্য": return Icons.health_and_safety;
+      default: return Icons.category;
     }
   }
 
-  Widget _topBar() {
+  Widget _topBar(bool isDark) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 50, 16, 16),
-      color: const Color(0xFF111125),
+      color: isDark ? const Color(0xFF111125) : Colors.white,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -201,10 +180,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
               const SizedBox(width: 10),
               Text(
                 _auth.currentUser?.displayName ?? "ব্যবহারকারী",
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFE2E0FC),
+                  color: isDark ? const Color(0xFFE2E0FC) : Colors.black87,
                 ),
               ),
             ],
@@ -218,17 +197,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _searchSection() {
+  Widget _searchSection(bool isDark) {
     return Column(
       children: [
         TextField(
           controller: _searchController,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
           decoration: InputDecoration(
             hintText: "লেনদেন খুঁজুন...",
             hintStyle: const TextStyle(color: Colors.grey),
             filled: true,
-            fillColor: const Color(0xFF333348),
+            fillColor: isDark ? const Color(0xFF333348) : Colors.grey[200],
             prefixIcon: const Icon(Icons.search, color: Colors.grey),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -244,12 +223,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             children: ["দৈনিক", "মাসিক", "বার্ষিক", "কাস্টম"].map((filter) {
               final isActive = _filterType == filter;
               return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _filterType = filter;
-                  });
-                },
-                child: _filterChip(filter, isActive),
+                onTap: () => setState(() => _filterType = filter),
+                child: _filterChip(filter, isActive, isDark),
               );
             }).toList(),
           ),
@@ -258,15 +233,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _filterChip(String text, bool active) {
+  Widget _filterChip(String text, bool active, bool isDark) {
     return Container(
       margin: const EdgeInsets.only(right: 8),
       child: Chip(
         label: Text(text),
-        backgroundColor: active
-            ? const Color(0xFF60DCB2)
-            : const Color(0xFF1E1E32),
-        labelStyle: TextStyle(color: active ? Colors.black : Colors.white70),
+        backgroundColor: active ? const Color(0xFF60DCB2) : (isDark ? const Color(0xFF1E1E32) : Colors.grey[300]),
+        labelStyle: TextStyle(color: active ? Colors.black : (isDark ? Colors.white70 : Colors.black87)),
       ),
     );
   }
@@ -276,34 +249,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
         text.toUpperCase(),
-        style: const TextStyle(
-          color: Colors.grey,
-          fontSize: 12,
-          letterSpacing: 2,
-        ),
+        style: const TextStyle(color: Colors.grey, fontSize: 12, letterSpacing: 2),
       ),
     );
   }
 
-  Widget _transactionItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String amount,
-    required bool isExpense,
-  }) {
+  Widget _transactionItem(bool isDark, {required IconData icon, required String title, required String subtitle, required String amount, required bool isExpense}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E32),
+        color: isDark ? const Color(0xFF1E1E32) : Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
           Container(
-            height: 44,
-            width: 44,
+            height: 44, width: 44,
             decoration: BoxDecoration(
               color: const Color(0xFF60DCB2).withOpacity(.1),
               borderRadius: BorderRadius.circular(10),
@@ -315,29 +277,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(title, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
-                ),
+                Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             ),
           ),
           Text(
             amount,
             style: TextStyle(
-              color: isExpense
-                  ? const Color(0xFFFFB3B0)
-                  : const Color(0xFF60DCB2),
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+              color: isExpense ? Colors.red : const Color(0xFF60DCB2),
+              fontWeight: FontWeight.bold, fontSize: 16,
             ),
           ),
         ],

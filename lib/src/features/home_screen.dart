@@ -40,7 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         insetPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF0C0C1F),
+            color: Theme.of(context).scaffoldBackgroundColor,
             borderRadius: BorderRadius.circular(20),
           ),
           child: ClipRRect(
@@ -61,11 +61,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0C0C1F),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF111125),
-        elevation: 0,
         title: Row(
           children: [
             CircleAvatar(
@@ -76,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(width: 10),
             Text(
               auth.currentUser?.displayName ?? "",
-              style: const TextStyle(fontSize: 16),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -188,7 +187,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E1E32),
+                        color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
@@ -197,10 +196,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
+                              Text(
                                 "মাসিক বাজেট",
                                 style: TextStyle(
-                                  color: Colors.white70,
+                                  color: isDark ? Colors.white70 : Colors.black54,
                                   fontSize: 14,
                                 ),
                               ),
@@ -237,15 +236,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             children: [
                               Text(
                                 "\৳${monthlyExpense.toStringAsFixed(2)}",
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: isDark ? Colors.white : Colors.black87,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
                                 "সীমা: \৳${monthlyBudget.toStringAsFixed(2)}",
-                                style: const TextStyle(
-                                  color: Colors.white54,
+                                style: TextStyle(
+                                  color: isDark ? Colors.white54 : Colors.black45,
                                   fontSize: 12,
                                 ),
                               ),
@@ -325,20 +324,21 @@ class _BalanceSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "বর্তমান মোট সম্পদ",
-          style: TextStyle(color: Colors.white54),
+          style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
         ),
         const SizedBox(height: 5),
         Text(
           "\৳${balance.toStringAsFixed(2)}",
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 40,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: isDark ? Colors.white : Colors.black87,
           ),
         ),
       ],
@@ -393,17 +393,18 @@ class _CardItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E32),
+        color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white54)),
+          Text(title, style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
           const SizedBox(height: 5),
           Text(
             amount,
@@ -426,14 +427,15 @@ class _BottomSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "সাম্প্রতিক কার্যক্রম",
           style: TextStyle(
             fontSize: 18,
-            color: Colors.white,
+            color: isDark ? Colors.white : Colors.black87,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -446,10 +448,10 @@ class _BottomSection extends StatelessWidget {
             }
 
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(
+              return Center(
                 child: Text(
                   "কোনো লেনদেন নেই",
-                  style: TextStyle(color: Colors.white54),
+                  style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
                 ),
               );
             }
@@ -491,16 +493,17 @@ class _TransactionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: const Color(0xFF333348),
+        backgroundColor: isDark ? const Color(0xFF333348) : Colors.grey[300],
         child: Icon(
           isExpense ? Icons.arrow_upward : Icons.arrow_downward,
           color: isExpense ? Colors.red : Colors.green,
         ),
       ),
-      title: Text(title, style: const TextStyle(color: Colors.white)),
-      subtitle: Text(subtitle, style: const TextStyle(color: Colors.white54)),
+      title: Text(title, style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
+      subtitle: Text(subtitle, style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
       trailing: Text(
         amount,
         style: TextStyle(

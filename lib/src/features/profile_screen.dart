@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:hisab_app/main.dart'; // Access themeNotifier
 import 'package:hisab_app/src/features/edit_profile_screen.dart';
 
 import '../../core/services/transaction_service.dart';
@@ -17,17 +18,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF111125),
       appBar: AppBar(
-        backgroundColor: Colors.black.withOpacity(0.6),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        title: const Text(
+        title: Text(
           "প্রোফাইল",
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color(0xFFE2E0FC),
+            color: isDark ? const Color(0xFFE2E0FC) : Colors.black87,
           ),
         ),
         actions: const [
@@ -72,7 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       shape: BoxShape.circle,
                       color: Color(0xFF60DCB2),
                     ),
-                    child: const Icon(Icons.edit, size: 16),
+                    child: const Icon(Icons.edit, size: 16, color: Colors.white),
                   ),
                 ),
               ],
@@ -80,10 +82,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const SizedBox(height: 12),
             Text(
               auth.currentUser?.displayName ?? "ব্যবহারকারী",
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFFE2E0FC),
+                color: isDark ? const Color(0xFFE2E0FC) : Colors.black87,
               ),
             ),
             const SizedBox(height: 4),
@@ -117,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Row(
                         children: [
                           Text(
-                            "\৳${balance.toStringAsFixed(2)}",
+                            "৳${balance.toStringAsFixed(2)}",
                             style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
@@ -164,29 +166,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _menuItem(Icons.lock, "নিরাপত্তা"),
             const SizedBox(height: 10),
 
-            /// 🔥 DARK MODE
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E1E32),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.dark_mode, color: Color(0xFF60DCB2)),
-                  const SizedBox(width: 12),
-                  const Text(
-                    "ডার্ক মোড",
-                    style: TextStyle(color: Colors.white),
+            /// 🔥 DARK MODE SWITCH
+            ValueListenableBuilder<ThemeMode>(
+              valueListenable: themeNotifier,
+              builder: (_, mode, __) {
+                return Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  const Spacer(),
-                  Switch(
-                    value: true,
-                    onChanged: (v) {},
-                    activeColor: const Color(0xFF60DCB2),
+                  child: Row(
+                    children: [
+                      Icon(
+                        mode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
+                        color: const Color(0xFF60DCB2),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        mode == ThemeMode.dark ? "ডার্ক মোড (On)" : "ডার্ক মোড (Off)",
+                        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                      ),
+                      const Spacer(),
+                      Switch(
+                        value: mode == ThemeMode.dark,
+                        onChanged: (v) {
+                          themeNotifier.value = v ? ThemeMode.dark : ThemeMode.light;
+                        },
+                        activeColor: const Color(0xFF60DCB2),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             ),
             const SizedBox(height: 10),
 
@@ -228,23 +240,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String? trailing,
     VoidCallback? onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E1E32),
+          color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
             Icon(icon, color: const Color(0xFF60DCB2)),
             const SizedBox(width: 12),
-            Text(title, style: const TextStyle(color: Colors.white)),
+            Text(
+              title,
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            ),
             const Spacer(),
             if (trailing != null)
-              Text(trailing, style: const TextStyle(color: Colors.white70)),
+              Text(
+                trailing,
+                style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+              ),
             const Icon(Icons.chevron_right, color: Colors.grey),
           ],
         ),

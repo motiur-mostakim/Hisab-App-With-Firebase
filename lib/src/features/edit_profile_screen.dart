@@ -56,20 +56,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       String? photoUrl = user.photoURL;
 
-      // ছবি আপলোড (যদি পরিবর্তন করা হয়)
       if (_imageFile != null) {
         final ref = _storage.ref().child('user_profiles/${user.uid}.jpg');
         await ref.putFile(_imageFile!);
         photoUrl = await ref.getDownloadURL();
       }
 
-      // প্রোফাইল আপডেট
       await user.updateDisplayName(_nameController.text);
       if (photoUrl != null) {
         await user.updatePhotoURL(photoUrl);
       }
 
-      // রিফ্রেশ করার জন্য ইউজারকে রিলোড করা
       await user.reload();
 
       if (mounted) {
@@ -92,20 +89,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = _auth.currentUser;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF111125),
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF60DCB2)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           "প্রোফাইল এডিট করুন",
           style: TextStyle(
-            color: Color(0xFFE2E0FC),
+            color: isDark ? const Color(0xFFE2E0FC) : Colors.black87,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -116,7 +111,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
             child: Column(
               children: [
-                /// 🔥 PROFILE IMAGE
                 Column(
                   children: [
                     Stack(
@@ -124,10 +118,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       children: [
                         Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: LinearGradient(
-                              colors: [Color(0xFF60DCB2), Color(0xFF333348)],
+                              colors: [const Color(0xFF60DCB2), isDark ? const Color(0xFF333348) : Colors.grey[300]!],
                             ),
                           ),
                           child: CircleAvatar(
@@ -166,8 +160,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
                 const SizedBox(height: 30),
 
-                /// 🔥 FORM FIELDS
                 _inputField(
+                  isDark: isDark,
                   controller: _nameController,
                   icon: Icons.person,
                   label: "পুরো নাম",
@@ -175,6 +169,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
 
                 _inputField(
+                  isDark: isDark,
                   controller: _emailController,
                   icon: Icons.mail,
                   label: "ইমেইল ঠিকানা",
@@ -232,13 +227,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A1A2E),
+                    color: isDark ? const Color(0xFF1A1A2E) : Colors.grey[200],
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.security, color: Color(0xFF60DCB2)),
-                      SizedBox(width: 10),
+                      const Icon(Icons.security, color: Color(0xFF60DCB2)),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,12 +241,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             Text(
                               "নিরাপত্তা টিপস",
                               style: TextStyle(
-                                color: Colors.white,
+                                color: isDark ? Colors.white : Colors.black87,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(height: 4),
-                            Text(
+                            const SizedBox(height: 4),
+                            const Text(
                               "আপনার অ্যাকাউন্ট সুরক্ষিত রাখতে নিয়মিত পাসওয়ার্ড পরিবর্তন করুন।",
                               style: TextStyle(color: Colors.grey),
                             ),
@@ -275,7 +270,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       ),
     );
   }
+
   Widget _inputField({
+    required bool isDark,
     required TextEditingController controller,
     required IconData icon,
     required String label,
@@ -286,7 +283,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E32),
+        color: isDark ? const Color(0xFF1E1E32) : Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -303,7 +300,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   controller: controller,
                   readOnly: readOnly,
                   style: TextStyle(
-                    color: readOnly ? Colors.white54 : Colors.white,
+                    color: readOnly 
+                        ? (isDark ? Colors.white54 : Colors.black45) 
+                        : (isDark ? Colors.white : Colors.black87),
                   ),
                   decoration: InputDecoration(
                     hintText: hint,

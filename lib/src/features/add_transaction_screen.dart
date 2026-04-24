@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../core/model/transaction_model.dart';
@@ -27,7 +26,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   final TextEditingController dateController = TextEditingController();
   final TransactionService _transactionService = TransactionService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  // final ImagePicker _picker = ImagePicker();
 
   DateTime selectedDate = DateTime.now();
 
@@ -107,7 +105,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         const SnackBar(content: Text('লেনদেন সংরক্ষিত হয়েছে')),
       );
 
-      Navigator.pop(context); // Close dialog after saving
+      Navigator.pop(context); 
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('ত্রুটি: $e')),
@@ -117,11 +115,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primaryTextColor = isDark ? Colors.white : Colors.black87;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+    final fieldFillColor = isDark ? const Color(0xFF333348) : Colors.grey[200];
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0C0C1F),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF111125),
-        elevation: 0,
         title: Text(isExpense ? "নতুন ব্যয়" : "নতুন আয়"),
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -135,12 +135,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           children: [
             Row(
               children: [
-                const Text(
+                Text(
                   "\৳",
                   style: TextStyle(
                     fontSize: 40,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: primaryTextColor,
                   ),
                 ),
                 Expanded(
@@ -148,14 +148,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     controller: amountController,
                     keyboardType: TextInputType.number,
                     autofocus: true,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 40,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: primaryTextColor,
                     ),
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: "0.00",
-                      hintStyle: TextStyle(color: Colors.grey),
+                      hintStyle: const TextStyle(color: Colors.grey),
                       border: InputBorder.none,
                     ),
                   ),
@@ -166,18 +166,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1A2E),
+                color: isDark ? const Color(0xFF1A1A2E) : Colors.grey[300],
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [_toggleBtn("ব্যয়", true), _toggleBtn("আয়", false)],
+                children: [_toggleBtn("ব্যয়", true, isDark), _toggleBtn("আয়", false, isDark)],
               ),
             ),
             const SizedBox(height: 25),
-            const Text(
+            Text(
               "বিভাগ নির্বাচন করুন",
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(color: secondaryTextColor),
             ),
             const SizedBox(height: 10),
             SizedBox(
@@ -205,7 +205,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? const Color(0xFF60DCB2).withOpacity(0.2)
-                            : const Color(0xFF1E1E32),
+                            : (isDark ? const Color(0xFF1E1E32) : Colors.grey[200]),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Column(
@@ -235,16 +235,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
             ),
             const SizedBox(height: 25),
-            const Text("তারিখ", style: TextStyle(color: Colors.white70)),
+            Text("তারিখ", style: TextStyle(color: secondaryTextColor)),
             const SizedBox(height: 5),
             TextField(
               controller: dateController,
               onTap: _selectDate,
               readOnly: true,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: primaryTextColor),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: const Color(0xFF333348),
+                fillColor: fieldFillColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -253,15 +253,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text("বিবরণ", style: TextStyle(color: Colors.white70)),
+            Text("বিবরণ", style: TextStyle(color: secondaryTextColor)),
             const SizedBox(height: 5),
             TextField(
               controller: noteController,
               maxLines: 2,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: primaryTextColor),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: const Color(0xFF333348),
+                fillColor: fieldFillColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -300,7 +300,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
   }
 
-  Widget _toggleBtn(String text, bool value) {
+  Widget _toggleBtn(String text, bool value, bool isDark) {
     final selected = isExpense == value;
     return GestureDetector(
       onTap: () {
@@ -311,12 +311,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFF333348) : Colors.transparent,
+          color: selected ? (isDark ? const Color(0xFF333348) : Colors.white) : Colors.transparent,
           borderRadius: BorderRadius.circular(25),
         ),
         child: Text(
           text,
-          style: TextStyle(color: selected ? Colors.white : Colors.grey),
+          style: TextStyle(
+            color: selected 
+              ? (isDark ? Colors.white : Colors.black) 
+              : Colors.grey,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          ),
         ),
       ),
     );

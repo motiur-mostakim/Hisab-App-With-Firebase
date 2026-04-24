@@ -19,7 +19,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         equation = "0";
         result = "0";
       } else if (buttonText == "⌫") {
-        equation = equation.substring(0, equation.length - 1);
+        if (equation.isNotEmpty && equation != "0") {
+          equation = equation.substring(0, equation.length - 1);
+        }
         if (equation == "") {
           equation = "0";
         }
@@ -50,26 +52,33 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     });
   }
 
-  Widget buildButton(String buttonText, double buttonHeight, Color buttonColor) {
+  Widget buildButton(String buttonText, double buttonHeight, Color buttonColor, bool isDark) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.1 * buttonHeight,
-      color: buttonColor,
+      decoration: BoxDecoration(
+        color: buttonColor,
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.black12,
+          width: 0.5,
+        ),
+      ),
       child: TextButton(
         style: TextButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(0.0),
-            side: const BorderSide(
-                color: Colors.white10, width: 1, style: BorderStyle.solid),
           ),
           padding: const EdgeInsets.all(16.0),
         ),
         onPressed: () => buttonPressed(buttonText),
         child: Text(
           buttonText,
-          style: const TextStyle(
-              fontSize: 30.0,
-              fontWeight: FontWeight.normal,
-              color: Colors.white),
+          style: TextStyle(
+            fontSize: 30.0,
+            fontWeight: FontWeight.normal,
+            color: (buttonColor == Colors.redAccent || buttonColor == Colors.blue) 
+                ? Colors.white 
+                : (isDark ? Colors.white : Colors.black87),
+          ),
         ),
       ),
     );
@@ -77,11 +86,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final numberBtnColor = isDark ? Colors.black54 : Colors.grey[200]!;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0C0C1F),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF111125),
-        elevation: 0,
         title: const Text("ক্যালকুলেটর"),
       ),
       body: SafeArea(
@@ -93,7 +102,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               padding: const EdgeInsets.fromLTRB(10, 20, 10, 0),
               child: Text(
                 equation,
-                style: const TextStyle(fontSize: 38.0, color: Colors.white70),
+                style: TextStyle(
+                  fontSize: 38.0, 
+                  color: isDark ? Colors.white70 : Colors.black54,
+                ),
               ),
             ),
             Container(
@@ -101,7 +113,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               padding: const EdgeInsets.fromLTRB(10, 30, 10, 0),
               child: Text(
                 result,
-                style: const TextStyle(fontSize: 48.0, color: Colors.white),
+                style: TextStyle(
+                  fontSize: 48.0, 
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
               ),
             ),
             const Expanded(child: Divider()),
@@ -113,29 +129,29 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                   child: Table(
                     children: [
                       TableRow(children: [
-                        buildButton("C", 1, Colors.redAccent),
-                        buildButton("⌫", 1, Colors.blue),
-                        buildButton("÷", 1, Colors.blue),
+                        buildButton("C", 1, Colors.redAccent, isDark),
+                        buildButton("⌫", 1, Colors.blue, isDark),
+                        buildButton("÷", 1, Colors.blue, isDark),
                       ]),
                       TableRow(children: [
-                        buildButton("7", 1, Colors.black54),
-                        buildButton("8", 1, Colors.black54),
-                        buildButton("9", 1, Colors.black54),
+                        buildButton("7", 1, numberBtnColor, isDark),
+                        buildButton("8", 1, numberBtnColor, isDark),
+                        buildButton("9", 1, numberBtnColor, isDark),
                       ]),
                       TableRow(children: [
-                        buildButton("4", 1, Colors.black54),
-                        buildButton("5", 1, Colors.black54),
-                        buildButton("6", 1, Colors.black54),
+                        buildButton("4", 1, numberBtnColor, isDark),
+                        buildButton("5", 1, numberBtnColor, isDark),
+                        buildButton("6", 1, numberBtnColor, isDark),
                       ]),
                       TableRow(children: [
-                        buildButton("1", 1, Colors.black54),
-                        buildButton("2", 1, Colors.black54),
-                        buildButton("3", 1, Colors.black54),
+                        buildButton("1", 1, numberBtnColor, isDark),
+                        buildButton("2", 1, numberBtnColor, isDark),
+                        buildButton("3", 1, numberBtnColor, isDark),
                       ]),
                       TableRow(children: [
-                        buildButton(".", 1, Colors.black54),
-                        buildButton("0", 1, Colors.black54),
-                        buildButton("00", 1, Colors.black54),
+                        buildButton(".", 1, numberBtnColor, isDark),
+                        buildButton("0", 1, numberBtnColor, isDark),
+                        buildButton("00", 1, numberBtnColor, isDark),
                       ]),
                     ],
                   ),
@@ -145,16 +161,16 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                   child: Table(
                     children: [
                       TableRow(children: [
-                        buildButton("×", 1, Colors.blue),
+                        buildButton("×", 1, Colors.blue, isDark),
                       ]),
                       TableRow(children: [
-                        buildButton("-", 1, Colors.blue),
+                        buildButton("-", 1, Colors.blue, isDark),
                       ]),
                       TableRow(children: [
-                        buildButton("+", 1, Colors.blue),
+                        buildButton("+", 1, Colors.blue, isDark),
                       ]),
                       TableRow(children: [
-                        buildButton("=", 2, Colors.redAccent),
+                        buildButton("=", 2, Colors.redAccent, isDark),
                       ]),
                     ],
                   ),

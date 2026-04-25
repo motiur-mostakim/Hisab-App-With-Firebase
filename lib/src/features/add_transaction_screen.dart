@@ -20,6 +20,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   late bool isExpense;
   Map<String, dynamic>? selectedCategory;
   File? receiptFile;
+  bool isLoan = false; // ধারের জন্য নতুন স্টেট
 
   final TextEditingController amountController = TextEditingController();
   final TextEditingController noteController = TextEditingController();
@@ -95,6 +96,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         isExpense: isExpense,
         date: selectedDate,
         createdAt: DateTime.now(),
+        isLoan: isLoan, // ধার কি না তা সেভ করা
       );
 
       await _transactionService.addTransaction(transaction);
@@ -174,6 +176,44 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 children: [_toggleBtn("ব্যয়", true, isDark), _toggleBtn("আয়", false, isDark)],
               ),
             ),
+            const SizedBox(height: 20),
+
+            // 🔥 ধারের সুইচ
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isLoan ? Colors.orange.withOpacity(0.1) : fieldFillColor,
+                borderRadius: BorderRadius.circular(12),
+                border: isLoan ? Border.all(color: Colors.orange.withOpacity(0.5)) : null,
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.handshake, color: isLoan ? Colors.orange : Colors.grey),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isExpense ? "কাউকে ধার দিচ্ছি" : "কারো থেকে ধার নিচ্ছি",
+                          style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          "এটি ধারের লেনদেন হিসেবে চিহ্নিত করুন",
+                          style: TextStyle(color: secondaryTextColor, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: isLoan,
+                    onChanged: (v) => setState(() => isLoan = v),
+                    activeColor: Colors.orange,
+                  ),
+                ],
+              ),
+            ),
+
             const SizedBox(height: 25),
             Text(
               "বিভাগ নির্বাচন করুন",
@@ -266,7 +306,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                hintText: "এটি কিসের জন্য ছিল?",
+                hintText: isLoan ? "কার কাছ থেকে বা কাকে দিচ্ছেন?" : "এটি কিসের জন্য ছিল?",
                 hintStyle: const TextStyle(color: Colors.grey),
               ),
             ),
@@ -306,6 +346,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       onTap: () {
         setState(() {
           isExpense = value;
+          isLoan = false; // মোড চেঞ্জ করলে লোন রিসেট
         });
       },
       child: Container(

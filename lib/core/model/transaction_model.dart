@@ -9,7 +9,7 @@ class TransactionModel {
   final bool isExpense;
   final DateTime date;
   final DateTime createdAt;
-  // final String? receiptUrl;
+  final bool isLoan; // নতুন ফিল্ড
 
   TransactionModel({
     required this.id,
@@ -20,7 +20,7 @@ class TransactionModel {
     required this.isExpense,
     required this.date,
     required this.createdAt,
-    // this.receiptUrl,
+    this.isLoan = false, // ডিফল্টভাবে false
   });
 
   Map<String, dynamic> toMap() {
@@ -33,7 +33,7 @@ class TransactionModel {
       'isExpense': isExpense,
       'date': Timestamp.fromDate(date),
       'createdAt': Timestamp.fromDate(createdAt),
-      // 'receiptUrl': receiptUrl,
+      'isLoan': isLoan,
     };
   }
 
@@ -47,7 +47,7 @@ class TransactionModel {
       isExpense: map['isExpense'] ?? true,
       date: (map['date'] as Timestamp).toDate(),
       createdAt: (map['createdAt'] as Timestamp).toDate(),
-      // receiptUrl: map['receiptUrl'] as String?,
+      isLoan: map['isLoan'] ?? false,
     );
   }
 }

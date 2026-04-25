@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hisab_app/main.dart'; // Access themeNotifier
 import 'package:hisab_app/src/features/edit_profile_screen.dart';
+import 'package:hisab_app/src/features/debt_history_screen.dart'; // Import DebtHistoryScreen
 
 import '../../core/services/transaction_service.dart';
 
@@ -158,6 +159,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const EditProfileScreen(),
+                ),
+              ),
+            ),
+            _menuItem(
+              Icons.handshake,
+              "ধারের হিসাব",
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DebtHistoryScreen(),
                 ),
               ),
             ),

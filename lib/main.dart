@@ -1,8 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:hisab_app/core/services/notification_service.dart';
+import 'package:hisab_app/src/features/splash_screen.dart'; // Import SplashScreen
 
-import 'core/widgets/auth_check.dart';
 import 'firebase_options.dart';
 
 // Global theme notifier
@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
           darkTheme: ThemeData(
             useMaterial3: true,
             brightness: Brightness.dark,
-            scaffoldBackgroundColor: const Color(0xFF0C0C1F), // আপনার আগের ডার্ক কালার
+            scaffoldBackgroundColor: const Color(0xFF0C0C1F),
             appBarTheme: const AppBarTheme(
               backgroundColor: Color(0xFF111125),
               foregroundColor: Colors.white,
@@ -49,7 +49,7 @@ class MyApp extends StatelessWidget {
             colorSchemeSeed: const Color(0xFF60DCB2),
           ),
           themeMode: currentMode,
-          home: const AuthCheck(),
+          home: const SplashScreen(), // Set SplashScreen as initial route
         );
       },
     );

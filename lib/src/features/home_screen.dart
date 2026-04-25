@@ -16,7 +16,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final FirebaseAuth auth = FirebaseAuth.instance;
   final TransactionService _transactionService = TransactionService();
-  final double monthlyBudget = 3000.0; // মাসিক বাজেট লিমিট
+  final double monthlyBudget = 3500.0; // মাসিক বাজেট লিমিট
 
   double _getMonthlyExpense(List<TransactionModel> transactions) {
     final now = DateTime.now();
@@ -326,10 +326,11 @@ class _BalanceSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           "বর্তমান মোট সম্পদ",
+          textAlign: TextAlign.center,
           style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
         ),
         const SizedBox(height: 5),

@@ -17,6 +17,8 @@ class _NoteScreenState extends State<NoteScreen> {
   final NotificationService _notificationService = NotificationService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  final List<String> _weekDays = ["সোম", "মঙ্গল", "বুধ", "বৃহস্পতি", "শুক্র", "শনি", "রবি"];
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +34,7 @@ class _NoteScreenState extends State<NoteScreen> {
     final contentController = TextEditingController(text: note?.content);
     DateTime selectedDate = note?.createdAt ?? DateTime.now();
     DateTime? alarmTime = note?.alarmTime;
+    List<int> selectedRepeatDays = note?.repeatDays != null ? List.from(note!.repeatDays!) : [];
 
     final dateController = TextEditingController(text: _formatDate(selectedDate));
     final alarmController = TextEditingController(
@@ -124,6 +127,35 @@ class _NoteScreenState extends State<NoteScreen> {
                         enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: isDark ? Colors.white24 : Colors.grey)),
                       ),
                     ),
+                    if (alarmTime != null) ...[
+                      const SizedBox(height: 15),
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text("রিপিট করবেন?", style: TextStyle(color: Colors.grey, fontSize: 14)),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: List.generate(7, (index) {
+                          final dayIndex = index + 1;
+                          final isSelected = selectedRepeatDays.contains(dayIndex);
+                          return FilterChip(
+                            label: Text(_weekDays[index], style: TextStyle(fontSize: 10, color: isSelected ? Colors.black : (isDark ? Colors.white : Colors.black87))),
+                            selected: isSelected,
+                            selectedColor: const Color(0xFF60DCB2),
+                            onSelected: (bool selected) {
+                              setDialogState(() {
+                                if (selected) {
+                                  selectedRepeatDays.add(dayIndex);
+                                } else {
+                                  selectedRepeatDays.remove(dayIndex);
+                                }
+                              });
+                            },
+                          );
+                        }),
+                      ),
+                    ],
                     const SizedBox(height: 15),
                     TextField(
                       controller: contentController,
@@ -149,11 +181,54 @@ class _NoteScreenState extends State<NoteScreen> {
                     if (titleController.text.isEmpty) return;
                     final userId = _auth.currentUser?.uid ?? '';
                     final noteId = note?.id ?? const Uuid().v4();
-                    final newNote = NoteModel(id: noteId, userId: userId, title: titleController.text, content: contentController.text, createdAt: selectedDate, updatedAt: DateTime.now(), alarmTime: alarmTime);
-                    if (note == null) { await _noteService.addNote(newNote); } else { await _noteService.updateNote(newNote); }
-                    if (alarmTime != null && alarmTime!.isAfter(DateTime.now())) {
-                      await _notificationService.scheduleNotification(noteId.hashCode, "Note Reminder: ${titleController.text}", contentController.text, alarmTime!);
-                    } else { await _notificationService.cancelNotification(noteId.hashCode); }
+                    
+                    final newNote = NoteModel(
+                      id: noteId,
+                      userId: userId,
+                      title: titleController.text,
+                      content: contentController.text,
+                      createdAt: selectedDate,
+                      updatedAt: DateTime.now(),
+                      alarmTime: alarmTime,
+                      repeatDays: selectedRepeatDays.isEmpty ? null : selectedRepeatDays,
+                    );
+
+                    if (note == null) {
+                      await _noteService.addNote(newNote);
+                    } else {
+                      await _noteService.updateNote(newNote);
+                    }
+
+                    if (alarmTime != null) {
+                      // আগের সব রিমাইন্ডার ক্যানসেল করা
+                      await _notificationService.cancelNotification(noteId.hashCode);
+                      for (int i = 1; i <= 7; i++) {
+                        await _notificationService.cancelNotification(noteId.hashCode + i);
+                      }
+
+                      if (selectedRepeatDays.isEmpty) {
+                        // শুধু একবারের জন্য
+                        if (alarmTime!.isAfter(DateTime.now())) {
+                          await _notificationService.scheduleNotification(
+                              noteId.hashCode, "নোট রিমাইন্ডার: ${titleController.text}", contentController.text, alarmTime!);
+                        }
+                      } else {
+                        // নির্দিষ্ট বার অনুযায়ী রিপিট করার জন্য
+                        await _notificationService.scheduleWeeklyNotifications(
+                          noteId.hashCode,
+                          "নোট রিমাইন্ডার: ${titleController.text}",
+                          contentController.text,
+                          TimeOfDay.fromDateTime(alarmTime!),
+                          selectedRepeatDays,
+                        );
+                      }
+                    } else {
+                      await _notificationService.cancelNotification(noteId.hashCode);
+                      for (int i = 1; i <= 7; i++) {
+                        await _notificationService.cancelNotification(noteId.hashCode + i);
+                      }
+                    }
+                    
                     if (mounted) Navigator.pop(context);
                   },
                   child: Text(note == null ? "সংরক্ষণ" : "আপডেট", style: const TextStyle(color: Color(0xFF003829), fontWeight: FontWeight.bold)),
@@ -217,7 +292,10 @@ class _NoteScreenState extends State<NoteScreen> {
                             const SizedBox(width: 12),
                             const Icon(Icons.alarm, size: 14, color: Colors.orange),
                             const SizedBox(width: 4),
-                            Text(_formatDate(note.alarmTime!), style: const TextStyle(color: Colors.orange, fontSize: 12)),
+                            Text(
+                              "${note.alarmTime!.hour}:${note.alarmTime!.minute.toString().padLeft(2, '0')}${note.repeatDays != null ? ' (রিপিট)' : ''}",
+                              style: const TextStyle(color: Colors.orange, fontSize: 12),
+                            ),
                           ],
                         ],
                       ),

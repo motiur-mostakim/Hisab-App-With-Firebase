@@ -8,6 +8,7 @@ class NoteModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? alarmTime;
+  final List<int>? repeatDays; // ১ (সোমবার) থেকে ৭ (রবিবার)
 
   NoteModel({
     required this.id,
@@ -17,6 +18,7 @@ class NoteModel {
     required this.createdAt,
     required this.updatedAt,
     this.alarmTime,
+    this.repeatDays,
   });
 
   Map<String, dynamic> toMap() {
@@ -25,9 +27,10 @@ class NoteModel {
       'userId': userId,
       'title': title,
       'content': content,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
-      'alarmTime': alarmTime != null ? Timestamp.fromDate(alarmTime!) : null,
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
+      'alarmTime': alarmTime,
+      'repeatDays': repeatDays,
     };
   }
 
@@ -39,8 +42,11 @@ class NoteModel {
       content: map['content'] ?? '',
       createdAt: (map['createdAt'] as Timestamp).toDate(),
       updatedAt: (map['updatedAt'] as Timestamp).toDate(),
-      alarmTime: map['alarmTime'] != null
-          ? (map['alarmTime'] as Timestamp).toDate()
+      alarmTime: map['alarmTime'] != null 
+          ? (map['alarmTime'] as Timestamp).toDate() 
+          : null,
+      repeatDays: map['repeatDays'] != null 
+          ? List<int>.from(map['repeatDays']) 
           : null,
     );
   }

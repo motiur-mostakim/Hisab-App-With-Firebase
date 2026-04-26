@@ -264,6 +264,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: "calculator_tab",
         onPressed: _showCalculator,
         backgroundColor: const Color(0xFF60DCB2),
         child: const Icon(Icons.calculate, color: Color(0xFF003829)),

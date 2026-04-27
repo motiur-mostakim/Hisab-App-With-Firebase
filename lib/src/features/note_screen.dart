@@ -308,6 +308,7 @@ class _NoteScreenState extends State<NoteScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'note_fab',
         backgroundColor: const Color(0xFF60DCB2),
         onPressed: () => _showNoteDialog(),
         child: const Icon(Icons.add, color: Color(0xFF003829)),

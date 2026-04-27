@@ -10,6 +10,7 @@ import '../../core/widgets/more_category_bottom_sheet_widget.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final bool initialIsExpense;
+
   const AddTransactionScreen({super.key, this.initialIsExpense = true});
 
   @override
@@ -71,16 +72,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final userId = _auth.currentUser?.uid;
 
     if (amount == null || amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('সঠিক পরিমাণ প্রবেশ করুন')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('সঠিক পরিমাণ প্রবেশ করুন')));
       return;
     }
 
     if (userId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ব্যবহারকারী লগইন করা নেই')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('ব্যবহারকারী লগইন করা নেই')));
       return;
     }
 
@@ -103,15 +104,15 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('লেনদেন সংরক্ষিত হয়েছে')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('লেনদেন সংরক্ষিত হয়েছে')));
 
-      Navigator.pop(context); 
+      Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ত্রুটি: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('ত্রুটি: $e')));
     }
   }
 
@@ -173,7 +174,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [_toggleBtn("ব্যয়", true, isDark), _toggleBtn("আয়", false, isDark)],
+                children: [
+                  _toggleBtn("ব্যয়", true, isDark),
+                  _toggleBtn("আয়", false, isDark),
+                ],
               ),
             ),
             const SizedBox(height: 20),
@@ -184,23 +188,36 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               decoration: BoxDecoration(
                 color: isLoan ? Colors.orange.withOpacity(0.1) : fieldFillColor,
                 borderRadius: BorderRadius.circular(12),
-                border: isLoan ? Border.all(color: Colors.orange.withOpacity(0.5)) : null,
+                border: isLoan
+                    ? Border.all(color: Colors.orange.withOpacity(0.5))
+                    : null,
               ),
               child: Row(
                 children: [
-                  Icon(Icons.handshake, color: isLoan ? Colors.orange : Colors.grey),
+                  Icon(
+                    Icons.handshake,
+                    color: isLoan ? Colors.orange : Colors.grey,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          isExpense ? "কাউকে ধার দিচ্ছি" : "কারো থেকে ধার নিচ্ছি",
-                          style: TextStyle(color: primaryTextColor, fontWeight: FontWeight.bold),
+                          isExpense
+                              ? "কাউকে ধার দিচ্ছি"
+                              : "কারো থেকে ধার নিচ্ছি",
+                          style: TextStyle(
+                            color: primaryTextColor,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         Text(
                           "এটি ধারের লেনদেন হিসেবে চিহ্নিত করুন",
-                          style: TextStyle(color: secondaryTextColor, fontSize: 11),
+                          style: TextStyle(
+                            color: secondaryTextColor,
+                            fontSize: 11,
+                          ),
                         ),
                       ],
                     ),
@@ -245,7 +262,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? const Color(0xFF60DCB2).withOpacity(0.2)
-                            : (isDark ? const Color(0xFF1E1E32) : Colors.grey[200]),
+                            : (isDark
+                                  ? const Color(0xFF1E1E32)
+                                  : Colors.grey[200]),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Column(
@@ -289,7 +308,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                suffixIcon: const Icon(Icons.calendar_today, color: Colors.grey),
+                suffixIcon: const Icon(
+                  Icons.calendar_today,
+                  color: Colors.grey,
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -306,7 +328,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
-                hintText: isLoan ? "কার কাছ থেকে বা কাকে দিচ্ছেন?" : "এটি কিসের জন্য ছিল?",
+                hintText: isLoan
+                    ? "কার কাছ থেকে বা কাকে দিচ্ছেন?"
+                    : "এটি কিসের জন্য ছিল?",
                 hintStyle: const TextStyle(color: Colors.grey),
               ),
             ),
@@ -352,15 +376,17 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? (isDark ? const Color(0xFF333348) : Colors.white) : Colors.transparent,
+          color: selected
+              ? (isDark ? const Color(0xFF333348) : Colors.white)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(25),
         ),
         child: Text(
           text,
           style: TextStyle(
-            color: selected 
-              ? (isDark ? Colors.white : Colors.black) 
-              : Colors.grey,
+            color: selected
+                ? (isDark ? Colors.white : Colors.black)
+                : Colors.grey,
             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
         ),

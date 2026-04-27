@@ -16,10 +16,10 @@ class NoteService {
         .orderBy('updatedAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return NoteModel.fromMap(doc.data() as Map<String, dynamic>);
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            return NoteModel.fromMap(doc.data() as Map<String, dynamic>);
+          }).toList();
+        });
   }
 
   Future<void> addNote(NoteModel note) async {

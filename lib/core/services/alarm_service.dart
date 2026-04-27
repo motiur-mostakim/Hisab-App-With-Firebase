@@ -12,7 +12,7 @@ class AlarmService {
     final prefs = await SharedPreferences.getInstance();
     final String? alarmsJson = prefs.getString(_storageKey);
     if (alarmsJson == null) return [];
-    
+
     final List<dynamic> decoded = json.decode(alarmsJson);
     return decoded.map((e) => AlarmModel.fromMap(e)).toList();
   }
@@ -20,13 +20,13 @@ class AlarmService {
   Future<void> saveAlarm(AlarmModel alarm) async {
     final alarms = await getAlarms();
     final index = alarms.indexWhere((e) => e.id == alarm.id);
-    
+
     if (index != -1) {
       alarms[index] = alarm;
     } else {
       alarms.add(alarm);
     }
-    
+
     await _saveToPrefs(alarms);
     if (alarm.isActive) {
       await _scheduleAlarm(alarm);
@@ -39,7 +39,7 @@ class AlarmService {
     final alarms = await getAlarms();
     final alarm = alarms.firstWhere((e) => e.id == id);
     await _cancelAlarm(alarm);
-    
+
     alarms.removeWhere((e) => e.id == id);
     await _saveToPrefs(alarms);
   }
@@ -57,7 +57,7 @@ class AlarmService {
       );
       alarms[index] = updatedAlarm;
       await _saveToPrefs(alarms);
-      
+
       if (updatedAlarm.isActive) {
         await _scheduleAlarm(updatedAlarm);
       } else {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 class CategoriesBottomSheet extends StatelessWidget {
   final Function(Map<String, dynamic>) onCategorySelected;
+
   const CategoriesBottomSheet({super.key, required this.onCategorySelected});
 
   @override

@@ -12,7 +12,10 @@ class DebtHistoryScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("ধারের হিসাব", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "ধারের হিসাব",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: StreamBuilder<List<TransactionModel>>(
         stream: transactionService.getTransactions(),
@@ -21,16 +24,24 @@ class DebtHistoryScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final allDebts = snapshot.data?.where((txn) => txn.isLoan).toList() ?? [];
+          final allDebts =
+              snapshot.data?.where((txn) => txn.isLoan).toList() ?? [];
 
           if (allDebts.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.handshake_outlined, size: 80, color: Colors.grey.withOpacity(0.5)),
+                  Icon(
+                    Icons.handshake_outlined,
+                    size: 80,
+                    color: Colors.grey.withOpacity(0.5),
+                  ),
                   const SizedBox(height: 16),
-                  const Text("কোনো ধারের লেনদেন নেই", style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    "কোনো ধারের লেনদেন নেই",
+                    style: TextStyle(color: Colors.grey),
+                  ),
                 ],
               ),
             );
@@ -38,10 +49,12 @@ class DebtHistoryScreen extends StatelessWidget {
 
           // নিট হিসাব বের করার লজিক
           double netOwedToMe = 0; // আমি মানুষের কাছে পাব
-          double netIOwe = 0;     // আমি মানুষের কাছে ঋণী
+          double netIOwe = 0; // আমি মানুষের কাছে ঋণী
 
-          double totalExpenseLoan = 0; // মোট কত টাকা ধার দিয়েছি/পরিশোধ করেছি (Cash Out)
-          double totalIncomeLoan = 0;  // মোট কত টাকা ধার নিয়েছি/ফেরত পেয়েছি (Cash In)
+          double totalExpenseLoan =
+              0; // মোট কত টাকা ধার দিয়েছি/পরিশোধ করেছি (Cash Out)
+          double totalIncomeLoan =
+              0; // মোট কত টাকা ধার নিয়েছি/ফেরত পেয়েছি (Cash In)
 
           for (var txn in allDebts) {
             if (txn.isExpense) {
@@ -73,7 +86,11 @@ class DebtHistoryScreen extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     "লেনদেনের ইতিহাস",
-                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold, fontSize: 14),
+                    style: TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
@@ -104,13 +121,9 @@ class DebtHistoryScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: _summaryTile("নিট পাওনা", netOwedToMe, Colors.green),
-          ),
+          Expanded(child: _summaryTile("নিট পাওনা", netOwedToMe, Colors.green)),
           Container(width: 1, height: 40, color: Colors.grey.withOpacity(0.3)),
-          Expanded(
-            child: _summaryTile("নিট দেনা", netIOwe, Colors.red),
-          ),
+          Expanded(child: _summaryTile("নিট দেনা", netIOwe, Colors.red)),
         ],
       ),
     );
@@ -123,7 +136,11 @@ class DebtHistoryScreen extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           "৳${amount.toStringAsFixed(0)}",
-          style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: color,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ],
     );
@@ -133,6 +150,7 @@ class DebtHistoryScreen extends StatelessWidget {
 class _DebtItem extends StatelessWidget {
   final TransactionModel txn;
   final bool isDark;
+
   const _DebtItem({required this.txn, required this.isDark});
 
   @override
@@ -157,7 +175,8 @@ class _DebtItem extends StatelessWidget {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: (txn.isExpense ? Colors.red : Colors.green).withOpacity(0.1),
+            backgroundColor: (txn.isExpense ? Colors.red : Colors.green)
+                .withOpacity(0.1),
             child: Icon(
               txn.isExpense ? Icons.arrow_upward : Icons.arrow_downward,
               color: txn.isExpense ? Colors.red : Colors.green,
@@ -171,7 +190,10 @@ class _DebtItem extends StatelessWidget {
               children: [
                 Text(
                   txn.note.isEmpty ? label : txn.note,
-                  style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   "${txn.date.day}/${txn.date.month}/${txn.date.year}",

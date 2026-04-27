@@ -36,7 +36,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   String _formatTime(DateTime dateTime) {
-    final hour = dateTime.hour > 12 ? dateTime.hour - 12 : (dateTime.hour == 0 ? 12 : dateTime.hour);
+    final hour = dateTime.hour > 12
+        ? dateTime.hour - 12
+        : (dateTime.hour == 0 ? 12 : dateTime.hour);
     final period = dateTime.hour >= 12 ? "PM" : "AM";
     return "${hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')} $period";
   }
@@ -44,8 +46,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showAlarmDialog({AlarmModel? alarm}) {
     final labelController = TextEditingController(text: alarm?.label);
     DateTime selectedTime = alarm?.dateTime ?? DateTime.now();
-    List<int> selectedRepeatDays = alarm?.repeatDays != null ? List.from(alarm!.repeatDays) : [];
-    final List<String> weekDays = ["সোম", "মঙ্গল", "বুধ", "বৃহস্পতি", "শুক্র", "শনি", "রবি"];
+    List<int> selectedRepeatDays = alarm?.repeatDays != null
+        ? List.from(alarm!.repeatDays)
+        : [];
+    final List<String> weekDays = [
+      "সোম",
+      "মঙ্গল",
+      "বুধ",
+      "বৃহস্পতি",
+      "শুক্র",
+      "শনি",
+      "রবি",
+    ];
 
     showModalBottomSheet(
       context: context,
@@ -57,11 +69,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return Container(
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
-              top: 20, left: 20, right: 20,
+              top: 20,
+              left: 20,
+              right: 20,
             ),
             decoration: BoxDecoration(
               color: isDark ? const Color(0xFF1E1E32) : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(30),
+              ),
             ),
             child: SingleChildScrollView(
               child: Column(
@@ -69,7 +85,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   Text(
                     alarm == null ? "নতুন অ্যালার্ম" : "অ্যালার্ম এডিট",
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   InkWell(
@@ -81,19 +100,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       if (picked != null) {
                         setModalState(() {
                           final now = DateTime.now();
-                          selectedTime = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
+                          selectedTime = DateTime(
+                            now.year,
+                            now.month,
+                            now.day,
+                            picked.hour,
+                            picked.minute,
+                          );
                         });
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 40),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 20,
+                        horizontal: 40,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFF60DCB2).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
                         _formatTime(selectedTime),
-                        style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Color(0xFF60DCB2)),
+                        style: const TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF60DCB2),
+                        ),
                       ),
                     ),
                   ),
@@ -104,11 +136,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       hintText: "অ্যালার্মের নাম (যেমন: নামাজ)",
                       filled: true,
                       fillColor: isDark ? Colors.white10 : Colors.grey[100],
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Align(alignment: Alignment.centerLeft, child: Text("রিপিট দিনগুলো নির্বাচন করুন:")),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text("রিপিট দিনগুলো নির্বাচন করুন:"),
+                  ),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
@@ -116,7 +154,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       final dayIndex = index + 1;
                       final isSelected = selectedRepeatDays.contains(dayIndex);
                       return FilterChip(
-                        label: Text(weekDays[index], style: TextStyle(fontSize: 12, color: isSelected ? Colors.black : (isDark ? Colors.white : Colors.black87))),
+                        label: Text(
+                          weekDays[index],
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: isSelected
+                                ? Colors.black
+                                : (isDark ? Colors.white : Colors.black87),
+                          ),
+                        ),
                         selected: isSelected,
                         selectedColor: const Color(0xFF60DCB2),
                         onSelected: (selected) {
@@ -138,12 +184,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF60DCB2),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
                       ),
                       onPressed: () async {
                         final newAlarm = AlarmModel(
                           id: alarm?.id ?? const Uuid().v4(),
-                          label: labelController.text.isEmpty ? "অ্যালার্ম" : labelController.text,
+                          label: labelController.text.isEmpty
+                              ? "অ্যালার্ম"
+                              : labelController.text,
                           dateTime: selectedTime,
                           repeatDays: selectedRepeatDays,
                         );
@@ -151,7 +201,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         _loadAlarms();
                         Navigator.pop(context);
                       },
-                      child: const Text("সেভ করুন", style: TextStyle(color: Color(0xFF003829), fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        "সেভ করুন",
+                        style: TextStyle(
+                          color: Color(0xFF003829),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -223,7 +279,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       shape: BoxShape.circle,
                       color: Color(0xFF60DCB2),
                     ),
-                    child: const Icon(Icons.edit, size: 16, color: Colors.white),
+                    child: const Icon(
+                      Icons.edit,
+                      size: 16,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],
@@ -260,19 +320,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Icon(Icons.alarm, color: Color(0xFF60DCB2)),
                           SizedBox(width: 8),
-                          Text("অফলাইন অ্যালার্ম", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text(
+                            "অফলাইন অ্যালার্ম",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
                         ],
                       ),
                       IconButton(
                         onPressed: () => _showAlarmDialog(),
-                        icon: const Icon(Icons.add_circle, color: Color(0xFF60DCB2)),
+                        icon: const Icon(
+                          Icons.add_circle,
+                          color: Color(0xFF60DCB2),
+                        ),
                       ),
                     ],
                   ),
                   if (_alarms.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 10),
-                      child: Text("কোনো অ্যালার্ম সেট করা নেই", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      child: Text(
+                        "কোনো অ্যালার্ম সেট করা নেই",
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
                     )
                   else
                     ListView.builder(
@@ -283,8 +355,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         final alarm = _alarms[index];
                         return ListTile(
                           contentPadding: EdgeInsets.zero,
-                          title: Text(_formatTime(alarm.dateTime), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-                          subtitle: Text(alarm.label + (alarm.repeatDays.isNotEmpty ? " (রিপিট)" : "")),
+                          title: Text(
+                            _formatTime(alarm.dateTime),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                            ),
+                          ),
+                          subtitle: Text(
+                            alarm.label +
+                                (alarm.repeatDays.isNotEmpty ? " (রিপিট)" : ""),
+                          ),
                           trailing: Switch(
                             value: alarm.isActive,
                             activeColor: const Color(0xFF60DCB2),
@@ -299,14 +380,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               builder: (context) => AlertDialog(
                                 title: const Text("অ্যালার্ম মুছুন?"),
                                 actions: [
-                                  TextButton(onPressed: () => Navigator.pop(context), child: const Text("না")),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text("না"),
+                                  ),
                                   TextButton(
                                     onPressed: () async {
                                       await _alarmService.deleteAlarm(alarm.id);
                                       _loadAlarms();
                                       Navigator.pop(context);
                                     },
-                                    child: const Text("হ্যাঁ", style: TextStyle(color: Colors.red)),
+                                    child: const Text(
+                                      "হ্যাঁ",
+                                      style: TextStyle(color: Colors.red),
+                                    ),
                                   ),
                                 ],
                               ),
@@ -359,19 +446,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Row(
                     children: [
                       Icon(
-                        mode == ThemeMode.dark ? Icons.dark_mode : Icons.light_mode,
+                        mode == ThemeMode.dark
+                            ? Icons.dark_mode
+                            : Icons.light_mode,
                         color: const Color(0xFF60DCB2),
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        mode == ThemeMode.dark ? "ডার্ক মোড (On)" : "ডার্ক মোড (Off)",
-                        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                        mode == ThemeMode.dark
+                            ? "ডার্ক মোড (On)"
+                            : "ডার্ক মোড (Off)",
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
                       ),
                       const Spacer(),
                       Switch(
                         value: mode == ThemeMode.dark,
                         onChanged: (v) {
-                          themeNotifier.value = v ? ThemeMode.dark : ThemeMode.light;
+                          themeNotifier.value = v
+                              ? ThemeMode.dark
+                              : ThemeMode.light;
                         },
                         activeColor: const Color(0xFF60DCB2),
                       ),
@@ -442,7 +537,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             if (trailing != null)
               Text(
                 trailing,
-                style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : Colors.black54,
+                ),
               ),
             const Icon(Icons.chevron_right, color: Colors.grey),
           ],

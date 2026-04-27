@@ -31,7 +31,10 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               .replaceAll("×", "*")
               .replaceAll("÷", "/")
               .replaceAll("ln", "ln") // math_expressions handles ln
-              .replaceAll("log", "log10"); // adjusting for math_expressions logic if needed
+              .replaceAll(
+                "log",
+                "log10",
+              ); // adjusting for math_expressions logic if needed
 
           Parser p = Parser();
           Expression expression = p.parse(exp);
@@ -50,7 +53,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       } else {
         // Handle scientific functions automatically adding bracket
         List<String> functions = ["sin", "cos", "tan", "log", "ln", "sqrt"];
-        
+
         if (equation == "0") {
           if (functions.contains(text)) {
             equation = "$text(";
@@ -68,8 +71,12 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
     });
   }
 
-  Widget buildButton(String text,
-      {Color? bgColor, Color? textColor, int flex = 1}) {
+  Widget buildButton(
+    String text, {
+    Color? bgColor,
+    Color? textColor,
+    int flex = 1,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Expanded(
       flex: flex,
@@ -97,9 +104,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   }
 
   Widget buildRow(List<Widget> children) {
-    return Expanded(
-      child: Row(children: children),
-    );
+    return Expanded(child: Row(children: children));
   }
 
   @override
@@ -118,7 +123,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                 isScientific = !isScientific;
               });
             },
-          )
+          ),
         ],
       ),
       body: Column(
@@ -139,8 +144,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                     child: Text(
                       equation,
                       style: TextStyle(
-                        fontSize: 32, 
-                        color: isDark ? Colors.white70 : Colors.black54
+                        fontSize: 32,
+                        color: isDark ? Colors.white70 : Colors.black54,
                       ),
                     ),
                   ),
@@ -150,7 +155,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                     style: TextStyle(
                       fontSize: 56,
                       color: isDark ? Colors.white : Colors.black87,
-                      fontWeight: FontWeight.bold
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ],
@@ -189,33 +194,62 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
                   ],
 
                   buildRow([
-                    buildButton("C", bgColor: Colors.redAccent, textColor: Colors.white),
-                    buildButton("⌫", bgColor: Colors.orange, textColor: Colors.white),
+                    buildButton(
+                      "C",
+                      bgColor: Colors.redAccent,
+                      textColor: Colors.white,
+                    ),
+                    buildButton(
+                      "⌫",
+                      bgColor: Colors.orange,
+                      textColor: Colors.white,
+                    ),
                     buildButton("%", textColor: const Color(0xFF60DCB2)),
-                    buildButton("÷", bgColor: const Color(0xFF60DCB2).withOpacity(0.2), textColor: const Color(0xFF60DCB2)),
+                    buildButton(
+                      "÷",
+                      bgColor: const Color(0xFF60DCB2).withOpacity(0.2),
+                      textColor: const Color(0xFF60DCB2),
+                    ),
                   ]),
                   buildRow([
                     buildButton("7"),
                     buildButton("8"),
                     buildButton("9"),
-                    buildButton("×", bgColor: const Color(0xFF60DCB2).withOpacity(0.2), textColor: const Color(0xFF60DCB2)),
+                    buildButton(
+                      "×",
+                      bgColor: const Color(0xFF60DCB2).withOpacity(0.2),
+                      textColor: const Color(0xFF60DCB2),
+                    ),
                   ]),
                   buildRow([
                     buildButton("4"),
                     buildButton("5"),
                     buildButton("6"),
-                    buildButton("-", bgColor: const Color(0xFF60DCB2).withOpacity(0.2), textColor: const Color(0xFF60DCB2)),
+                    buildButton(
+                      "-",
+                      bgColor: const Color(0xFF60DCB2).withOpacity(0.2),
+                      textColor: const Color(0xFF60DCB2),
+                    ),
                   ]),
                   buildRow([
                     buildButton("1"),
                     buildButton("2"),
                     buildButton("3"),
-                    buildButton("+", bgColor: const Color(0xFF60DCB2).withOpacity(0.2), textColor: const Color(0xFF60DCB2)),
+                    buildButton(
+                      "+",
+                      bgColor: const Color(0xFF60DCB2).withOpacity(0.2),
+                      textColor: const Color(0xFF60DCB2),
+                    ),
                   ]),
                   buildRow([
                     buildButton("0", flex: 1),
                     buildButton("."),
-                    buildButton("=", bgColor: const Color(0xFF60DCB2), textColor: Colors.white, flex: 2),
+                    buildButton(
+                      "=",
+                      bgColor: const Color(0xFF60DCB2),
+                      textColor: Colors.white,
+                      flex: 2,
+                    ),
                   ]),
                 ],
               ),

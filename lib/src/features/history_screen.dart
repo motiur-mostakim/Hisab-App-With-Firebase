@@ -23,7 +23,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     _searchController.addListener(() => setState(() {}));
   }
 
-  List<TransactionModel> _getFilteredByDate(List<TransactionModel> transactions) {
+  List<TransactionModel> _getFilteredByDate(
+    List<TransactionModel> transactions,
+  ) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final monthStart = DateTime(now.year, now.month, 1);
@@ -45,14 +47,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }).toList();
   }
 
-  Map<String, List<TransactionModel>> _groupByDate(List<TransactionModel> transactions) {
+  Map<String, List<TransactionModel>> _groupByDate(
+    List<TransactionModel> transactions,
+  ) {
     final grouped = <String, List<TransactionModel>>{};
     for (var txn in transactions) {
       final date = txn.date;
       final today = DateTime.now();
       final yesterday = today.subtract(const Duration(days: 1));
       final todayDate = DateTime(today.year, today.month, today.day);
-      final yesterdayDate = DateTime(yesterday.year, yesterday.month, yesterday.day);
+      final yesterdayDate = DateTime(
+        yesterday.year,
+        yesterday.month,
+        yesterday.day,
+      );
       final txnDate = DateTime(date.year, date.month, date.day);
 
       String key;
@@ -90,7 +98,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   return Center(
                     child: Text(
                       "কোনো লেনদেন নেই",
-                      style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                      style: TextStyle(
+                        color: isDark ? Colors.white54 : Colors.black54,
+                      ),
                     ),
                   );
                 }
@@ -100,9 +110,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 if (_searchController.text.isNotEmpty) {
                   final query = _searchController.text.toLowerCase();
                   dateFiltered = dateFiltered
-                      .where((txn) =>
-                          txn.category.toLowerCase().contains(query) ||
-                          txn.note.toLowerCase().contains(query))
+                      .where(
+                        (txn) =>
+                            txn.category.toLowerCase().contains(query) ||
+                            txn.note.toLowerCase().contains(query),
+                      )
                       .toList();
                 }
 
@@ -118,7 +130,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       Center(
                         child: Text(
                           "কোনো মিলিত লেনদেন নেই",
-                          style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                          style: TextStyle(
+                            color: isDark ? Colors.white54 : Colors.black54,
+                          ),
                         ),
                       )
                     else
@@ -132,8 +146,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                 isDark,
                                 icon: _getCategoryIcon(txn.category),
                                 title: txn.category,
-                                subtitle: "${txn.date.hour}:${txn.date.minute.toString().padLeft(2, '0')} • ${txn.note}",
-                                amount: "${txn.isExpense ? '-' : '+'}\৳${txn.amount.toStringAsFixed(2)}",
+                                subtitle:
+                                    "${txn.date.hour}:${txn.date.minute.toString().padLeft(2, '0')} • ${txn.note}",
+                                amount:
+                                    "${txn.isExpense ? '-' : '+'}\৳${txn.amount.toStringAsFixed(2)}",
                                 isExpense: txn.isExpense,
                               );
                             }).toList(),
@@ -153,12 +169,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   IconData _getCategoryIcon(String category) {
     switch (category) {
-      case "খাবার": return Icons.restaurant;
-      case "কেনাকাটা": return Icons.shopping_bag;
-      case "পরিবহন": return Icons.directions_car;
-      case "বিনোদন": return Icons.movie;
-      case "স্বাস্থ্য": return Icons.health_and_safety;
-      default: return Icons.category;
+      case "খাবার":
+        return Icons.restaurant;
+      case "কেনাকাটা":
+        return Icons.shopping_bag;
+      case "পরিবহন":
+        return Icons.directions_car;
+      case "বিনোদন":
+        return Icons.movie;
+      case "স্বাস্থ্য":
+        return Icons.health_and_safety;
+      default:
+        return Icons.category;
     }
   }
 
@@ -238,8 +260,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
       margin: const EdgeInsets.only(right: 8),
       child: Chip(
         label: Text(text),
-        backgroundColor: active ? const Color(0xFF60DCB2) : (isDark ? const Color(0xFF1E1E32) : Colors.grey[300]),
-        labelStyle: TextStyle(color: active ? Colors.black : (isDark ? Colors.white70 : Colors.black87)),
+        backgroundColor: active
+            ? const Color(0xFF60DCB2)
+            : (isDark ? const Color(0xFF1E1E32) : Colors.grey[300]),
+        labelStyle: TextStyle(
+          color: active
+              ? Colors.black
+              : (isDark ? Colors.white70 : Colors.black87),
+        ),
       ),
     );
   }
@@ -249,12 +277,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
         text.toUpperCase(),
-        style: const TextStyle(color: Colors.grey, fontSize: 12, letterSpacing: 2),
+        style: const TextStyle(
+          color: Colors.grey,
+          fontSize: 12,
+          letterSpacing: 2,
+        ),
       ),
     );
   }
 
-  Widget _transactionItem(bool isDark, {required IconData icon, required String title, required String subtitle, required String amount, required bool isExpense}) {
+  Widget _transactionItem(
+    bool isDark, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String amount,
+    required bool isExpense,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -265,7 +304,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Row(
         children: [
           Container(
-            height: 44, width: 44,
+            height: 44,
+            width: 44,
             decoration: BoxDecoration(
               color: const Color(0xFF60DCB2).withOpacity(.1),
               borderRadius: BorderRadius.circular(10),
@@ -277,9 +317,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -287,7 +336,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             amount,
             style: TextStyle(
               color: isExpense ? Colors.red : const Color(0xFF60DCB2),
-              fontWeight: FontWeight.bold, fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
             ),
           ),
         ],

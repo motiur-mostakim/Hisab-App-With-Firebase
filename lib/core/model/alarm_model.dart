@@ -37,5 +37,6 @@ class AlarmModel {
 
   String toJson() => json.encode(toMap());
 
-  factory AlarmModel.fromJson(String source) => AlarmModel.fromMap(json.decode(source));
+  factory AlarmModel.fromJson(String source) =>
+      AlarmModel.fromMap(json.decode(source));
 }

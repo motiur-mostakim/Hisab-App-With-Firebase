@@ -77,9 +77,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("ত্রুটি: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("ত্রুটি: $e")));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -121,7 +121,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: LinearGradient(
-                              colors: [const Color(0xFF60DCB2), isDark ? const Color(0xFF333348) : Colors.grey[300]!],
+                              colors: [
+                                const Color(0xFF60DCB2),
+                                isDark
+                                    ? const Color(0xFF333348)
+                                    : Colors.grey[300]!,
+                              ],
                             ),
                           ),
                           child: CircleAvatar(
@@ -129,9 +134,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             backgroundImage: _imageFile != null
                                 ? FileImage(_imageFile!)
                                 : NetworkImage(
-                                    user?.photoURL ??
-                                        "https://i.pravatar.cc/300",
-                                  ) as ImageProvider,
+                                        user?.photoURL ??
+                                            "https://i.pravatar.cc/300",
+                                      )
+                                      as ImageProvider,
                           ),
                         ),
                         GestureDetector(
@@ -144,8 +150,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 colors: [Color(0xFF60DCB2), Color(0xFF009672)],
                               ),
                             ),
-                            child: const Icon(Icons.camera_alt,
-                                size: 18, color: Color(0xFF003829)),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 18,
+                              color: Color(0xFF003829),
+                            ),
                           ),
                         ),
                       ],
@@ -300,8 +309,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   controller: controller,
                   readOnly: readOnly,
                   style: TextStyle(
-                    color: readOnly 
-                        ? (isDark ? Colors.white54 : Colors.black45) 
+                    color: readOnly
+                        ? (isDark ? Colors.white54 : Colors.black45)
                         : (isDark ? Colors.white : Colors.black87),
                   ),
                   decoration: InputDecoration(

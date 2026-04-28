@@ -187,7 +187,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
+                        color: isDark
+                            ? const Color(0xFF1E1E32)
+                            : Colors.grey[200],
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Column(
@@ -199,7 +201,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Text(
                                 "মাসিক বাজেট",
                                 style: TextStyle(
-                                  color: isDark ? Colors.white70 : Colors.black54,
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black54,
                                   fontSize: 14,
                                 ),
                               ),
@@ -244,7 +248,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Text(
                                 "সীমা: \৳${monthlyBudget.toStringAsFixed(2)}",
                                 style: TextStyle(
-                                  color: isDark ? Colors.white54 : Colors.black45,
+                                  color: isDark
+                                      ? Colors.white54
+                                      : Colors.black45,
                                   fontSize: 12,
                                 ),
                               ),
@@ -406,7 +412,10 @@ class _CardItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
+          Text(
+            title,
+            style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+          ),
           const SizedBox(height: 5),
           Text(
             amount,
@@ -453,7 +462,9 @@ class _BottomSection extends StatelessWidget {
               return Center(
                 child: Text(
                   "কোনো লেনদেন নেই",
-                  style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+                  style: TextStyle(
+                    color: isDark ? Colors.white54 : Colors.black54,
+                  ),
                 ),
               );
             }
@@ -504,8 +515,14 @@ class _TransactionItem extends StatelessWidget {
           color: isExpense ? Colors.red : Colors.green,
         ),
       ),
-      title: Text(title, style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
-      subtitle: Text(subtitle, style: TextStyle(color: isDark ? Colors.white54 : Colors.black54)),
+      title: Text(
+        title,
+        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+      ),
       trailing: Text(
         amount,
         style: TextStyle(

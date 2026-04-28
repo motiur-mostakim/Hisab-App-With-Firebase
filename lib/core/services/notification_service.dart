@@ -68,6 +68,7 @@ class NotificationService {
   }
 
   Future<void> scheduleNotification(int id, String title, String body, DateTime scheduledDate) async {
+    // local DateTime থেকে TZDateTime এ রূপান্তর (সঠিক মুহূর্ত নিশ্চিত করতে)
     tz.TZDateTime tzScheduledDate = scheduledDate is tz.TZDateTime ? scheduledDate : tz.TZDateTime.from(scheduledDate, tz.local);
     if (tzScheduledDate.isBefore(tz.TZDateTime.now(tz.local))) return;
 
@@ -79,11 +80,12 @@ class NotificationService {
     );
   }
 
-  // সাপ্তাহিক রিপিট অ্যালার্মের জন্য নতুন মেথড
   Future<void> scheduleWeeklyNotifications(int id, String title, String body, TimeOfDay time, List<int> days) async {
+    final int baseId = id.abs();
+    
     for (int day in days) {
-      // প্রতিটি দিনের জন্য আলাদা আইডি (যাতে কনফ্লিক্ট না হয়)
-      int uniqueId = id + day; 
+      int uniqueId = baseId + day;
+      
       await flutterLocalNotificationsPlugin.zonedSchedule(
         uniqueId,
         title,
@@ -92,26 +94,21 @@ class NotificationService {
         _notificationDetails(),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
-        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime, // এটিই সাপ্তাহিক রিপিট নিশ্চিত করে
+        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
       );
     }
   }
 
   tz.TZDateTime _nextInstanceOfDayAndTime(int day, TimeOfDay time) {
-    tz.TZDateTime scheduledDate = _nextInstanceOfTime(time.hour, time.minute);
-    while (scheduledDate.weekday != day) {
-      scheduledDate = scheduledDate.add(const Duration(days: 1));
-    }
-    return scheduledDate;
-  }
-
-  tz.TZDateTime _nextInstanceOfTime(int hour, int minute) {
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
+    final DateTime now = DateTime.now();
+    DateTime scheduledDate = DateTime(now.year, now.month, now.day, time.hour, time.minute);
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
-    return scheduledDate;
+    while (scheduledDate.weekday != day) {
+      scheduledDate = scheduledDate.add(const Duration(days: 1));
+    }
+    return tz.TZDateTime.from(scheduledDate, tz.local);
   }
 
   NotificationDetails _notificationDetails() {

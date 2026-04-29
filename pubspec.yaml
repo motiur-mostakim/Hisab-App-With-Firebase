@@ -38,9 +38,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/HisabDaily.png"
+  image_path: "assets/images/hisab_app_icon.png"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/HisabDaily.png"
+  adaptive_icon_foreground: "assets/images/hisab_app_icon.png"
   min_sdk_android: 21
 
 flutter:

@@ -288,6 +288,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
                                 "অ্যালার্ম: ${titleController.text}",
                                 "এখনই সময়!",
                                 finalAlarmTime,
+                                soundName: "sound_alarm"
                               );
                             }
                           } else {

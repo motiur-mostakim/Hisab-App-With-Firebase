@@ -142,6 +142,7 @@ class NotificationService {
     String title,
     String body,
     DateTime scheduledDate,
+      {String soundName = 'notification',}
   ) async {
     // local DateTime থেকে TZDateTime এ রূপান্তর (সঠিক মুহূর্ত নিশ্চিত করতে)
     tz.TZDateTime tzScheduledDate = scheduledDate is tz.TZDateTime
@@ -154,7 +155,7 @@ class NotificationService {
       title,
       body,
       tzScheduledDate,
-      _notificationDetails(),
+      _notificationDetails(soundName: soundName),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -167,6 +168,7 @@ class NotificationService {
     String body,
     TimeOfDay time,
     List<int> days,
+      {String soundName = 'notification',}
   ) async {
     final int baseId = id.abs();
 
@@ -178,7 +180,7 @@ class NotificationService {
         title,
         body,
         _nextInstanceOfDayAndTime(day, time),
-        _notificationDetails(),
+        _notificationDetails(soundName: soundName),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
@@ -205,15 +207,15 @@ class NotificationService {
     return tz.TZDateTime.from(scheduledDate, tz.local);
   }
 
-  NotificationDetails _notificationDetails() {
-    return const NotificationDetails(
+  NotificationDetails _notificationDetails({String soundName = 'notification'}) {
+    return NotificationDetails(
       android: AndroidNotificationDetails(
         'note_alarm_channel_v9',
         'নোট অ্যালার্ম',
         importance: Importance.max,
         priority: Priority.high,
         playSound: true,
-        sound: RawResourceAndroidNotificationSound('notification'),
+        sound: RawResourceAndroidNotificationSound(soundName),
         enableVibration: true,
         fullScreenIntent: true,
         category: AndroidNotificationCategory.alarm,

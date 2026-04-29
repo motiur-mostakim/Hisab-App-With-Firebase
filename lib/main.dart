@@ -1,5 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:hisab_app/core/services/note_services_for_local_database.dart';
 import 'package:hisab_app/core/services/notification_service.dart';
 import 'package:hisab_app/src/features/splash_screen.dart'; // Import SplashScreen
 
@@ -13,8 +14,11 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await NotificationService().initNotification();
+  final notificationService = NotificationService();
+  await notificationService.initNotification();
   await FCMService().init();
+  final notes = await NoteServicesForLocalDatabase().getNotes();
+  await notificationService.restoreAlarms(notes);
   runApp(const MyApp());
 }
 

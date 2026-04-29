@@ -1,10 +1,9 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-import '../../core/model/alarm_model.dart';
+
 import '../../core/model/note_model.dart';
-import '../../core/services/alarm_service.dart';
 import '../../core/services/note_service.dart';
+import '../../core/services/note_services_for_local_database.dart';
 import '../../core/services/notification_service.dart';
 
 class AlarmScreen extends StatefulWidget {
@@ -15,39 +14,64 @@ class AlarmScreen extends StatefulWidget {
 }
 
 class _AlarmScreenState extends State<AlarmScreen> {
+  final NoteServicesForLocalDatabase _noteService =
+      NoteServicesForLocalDatabase();
 
-  final NoteService _noteService = NoteService();
   final NotificationService _notificationService = NotificationService();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  final List<String> _weekDays = ["সোম", "মঙ্গল", "বুধ", "বৃহস্পতি", "শুক্র", "শনি", "রবি"];
+  List<NoteModel> _notes = [];
+
+  final List<String> _weekDays = [
+    "সোম",
+    "মঙ্গল",
+    "বুধ",
+    "বৃহস্পতি",
+    "শুক্র",
+    "শনি",
+    "রবি"
+  ];
 
   @override
   void initState() {
     super.initState();
     _notificationService.initNotification();
+    _loadNotes();
+  }
+
+  /// 🔥 Load Notes
+  Future<void> _loadNotes() async {
+    final data = await _noteService.getNotes();
+    setState(() {
+      _notes = data;
+    });
+  }
+
+  /// 🔥 Delete
+  Future<void> _deleteNote(NoteModel note) async {
+    await _noteService.deleteNote(note.id);
+
+    /// cancel alarm
+    await _notificationService.cancelNotification(note.id.hashCode);
+    for (int i = 1; i <= 7; i++) {
+      await _notificationService.cancelNotification(note.id.hashCode + i);
+    }
+
+    await _loadNotes();
   }
 
   String _formatDate(DateTime date) {
-    return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
-  }
-
-  String _formatOnlyDate(DateTime date) {
-    return "${date.day}/${date.month}/${date.year}";
+    return "${date.day}/${date.month}/${date.year} "
+        "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
   }
 
   void _showNoteBottomSheet({NoteModel? note}) {
     final titleController = TextEditingController(text: note?.title);
     final contentController = TextEditingController(text: note?.content);
 
-    DateTime selectedDate = note?.createdAt ?? DateTime.now();
     DateTime? alarmTime = note?.alarmTime;
 
     List<int> selectedRepeatDays =
-    note?.repeatDays != null ? List.from(note!.repeatDays!) : [];
-
-    final dateController =
-    TextEditingController(text: _formatOnlyDate(selectedDate));
+        note?.repeatDays != null ? List.from(note!.repeatDays!) : [];
 
     final alarmController = TextEditingController(
       text: alarmTime != null ? _formatDate(alarmTime!) : "অ্যালার্ম নেই",
@@ -60,8 +84,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            final isDark =
-                Theme.of(context).brightness == Brightness.dark;
+            final isDark = Theme.of(context).brightness == Brightness.dark;
 
             return Container(
               padding: EdgeInsets.only(
@@ -73,13 +96,13 @@ class _AlarmScreenState extends State<AlarmScreen> {
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF1E1E32) : Colors.white,
                 borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(30)),
+                    const BorderRadius.vertical(top: Radius.circular(30)),
               ),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    /// Title
+                    /// TITLE
                     Text(
                       note == null ? "নতুন নোট" : "নোট এডিট",
                       style: const TextStyle(
@@ -88,14 +111,13 @@ class _AlarmScreenState extends State<AlarmScreen> {
 
                     const SizedBox(height: 20),
 
-                    /// Note Title
+                    /// NOTE TITLE
                     TextField(
                       controller: titleController,
                       decoration: InputDecoration(
                         hintText: "শিরোনাম",
                         filled: true,
-                        fillColor:
-                        isDark ? Colors.white10 : Colors.grey[100],
+                        fillColor: isDark ? Colors.white10 : Colors.grey[100],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -105,43 +127,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
 
                     const SizedBox(height: 15),
 
-                    /// Date Picker
-                    TextField(
-                      controller: dateController,
-                      readOnly: true,
-                      onTap: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: selectedDate,
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
-                        );
-
-                        if (picked != null) {
-                          setState(() {
-                            selectedDate = DateTime(
-                                picked.year, picked.month, picked.day);
-                            dateController.text =
-                                _formatOnlyDate(selectedDate);
-                          });
-                        }
-                      },
-                      decoration: InputDecoration(
-                        hintText: "তারিখ নির্বাচন করুন",
-                        suffixIcon: const Icon(Icons.calendar_today),
-                        filled: true,
-                        fillColor:
-                        isDark ? Colors.white10 : Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 15),
-
-                    /// Alarm Picker
+                    /// ALARM PICKER (Handles both Date and Time)
                     TextField(
                       controller: alarmController,
                       readOnly: true,
@@ -149,7 +135,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
                         final pickedDate = await showDatePicker(
                           context: context,
                           initialDate: alarmTime ?? DateTime.now(),
-                          firstDate: DateTime.now(),
+                          firstDate: DateTime.now().subtract(const Duration(days: 0)),
                           lastDate: DateTime(2100),
                         );
 
@@ -169,30 +155,28 @@ class _AlarmScreenState extends State<AlarmScreen> {
                                 pickedTime.hour,
                                 pickedTime.minute,
                               );
-                              alarmController.text =
-                                  _formatDate(alarmTime!);
+
+                              alarmController.text = _formatDate(alarmTime!);
                             });
                           }
                         }
                       },
                       decoration: InputDecoration(
-                        hintText: "অ্যালার্ম সেট করুন",
+                        hintText: "অ্যালার্ম সেট করুন (তারিখ ও সময়)",
                         suffixIcon: alarmTime != null
                             ? IconButton(
-                          icon: const Icon(Icons.clear,
-                              color: Colors.red),
-                          onPressed: () {
-                            setState(() {
-                              alarmTime = null;
-                              alarmController.text =
-                              "অ্যালার্ম নেই";
-                            });
-                          },
-                        )
+                                icon: const Icon(Icons.clear, color: Colors.red),
+                                onPressed: () {
+                                  setState(() {
+                                    alarmTime = null;
+                                    selectedRepeatDays.clear();
+                                    alarmController.text = "অ্যালার্ম নেই";
+                                  });
+                                },
+                              )
                             : const Icon(Icons.alarm),
                         filled: true,
-                        fillColor:
-                        isDark ? Colors.white10 : Colors.grey[100],
+                        fillColor: isDark ? Colors.white10 : Colors.grey[100],
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -200,7 +184,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
                       ),
                     ),
 
-                    /// Repeat Days
+                    /// REPEAT DAYS
                     if (alarmTime != null) ...[
                       const SizedBox(height: 15),
                       const Align(
@@ -213,7 +197,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
                         children: List.generate(7, (index) {
                           final dayIndex = index + 1;
                           final isSelected =
-                          selectedRepeatDays.contains(dayIndex);
+                              selectedRepeatDays.contains(dayIndex);
 
                           return FilterChip(
                             label: Text(_weekDays[index]),
@@ -235,7 +219,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
 
                     const SizedBox(height: 25),
 
-                    /// Save Button
+                    /// SAVE BUTTON
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -249,17 +233,14 @@ class _AlarmScreenState extends State<AlarmScreen> {
                         onPressed: () async {
                           if (titleController.text.isEmpty) return;
 
-                          final userId =
-                              _auth.currentUser?.uid ?? '';
-                          final noteId =
-                              note?.id ?? const Uuid().v4();
+                          final noteId = note?.id ?? const Uuid().v4();
 
                           final newNote = NoteModel(
                             id: noteId,
-                            userId: userId,
+                            userId: '',
                             title: titleController.text,
-                            content: '',
-                            createdAt: selectedDate,
+                            content: contentController.text,
+                            createdAt: DateTime.now(),
                             updatedAt: DateTime.now(),
                             alarmTime: alarmTime,
                             repeatDays: selectedRepeatDays.isEmpty
@@ -267,27 +248,26 @@ class _AlarmScreenState extends State<AlarmScreen> {
                                 : selectedRepeatDays,
                           );
 
-                          /// Save Note
+                          /// SAVE
                           if (note == null) {
                             await _noteService.addNote(newNote);
                           } else {
                             await _noteService.updateNote(newNote);
                           }
 
-                          /// 🔔 Notification Logic (IMPORTANT)
-                          if (alarmTime != null) {
+                          /// NOTIFICATION
+                          await _notificationService
+                              .cancelNotification(noteId.hashCode);
+
+                          for (int i = 1; i <= 7; i++) {
                             await _notificationService
-                                .cancelNotification(noteId.hashCode);
+                                .cancelNotification(noteId.hashCode + i);
+                          }
 
-                            for (int i = 1; i <= 7; i++) {
-                              await _notificationService
-                                  .cancelNotification(noteId.hashCode + i);
-                            }
-
+                          if (alarmTime != null) {
                             if (selectedRepeatDays.isEmpty) {
                               if (alarmTime!.isAfter(DateTime.now())) {
-                                await _notificationService
-                                    .scheduleNotification(
+                                await _notificationService.scheduleNotification(
                                   noteId.hashCode,
                                   "নোট: ${titleController.text}",
                                   contentController.text,
@@ -304,16 +284,9 @@ class _AlarmScreenState extends State<AlarmScreen> {
                                 selectedRepeatDays,
                               );
                             }
-                          } else {
-                            await _notificationService
-                                .cancelNotification(noteId.hashCode);
-
-                            for (int i = 1; i <= 7; i++) {
-                              await _notificationService
-                                  .cancelNotification(noteId.hashCode + i);
-                            }
                           }
 
+                          await _loadNotes();
                           if (mounted) Navigator.pop(context);
                         },
                         child: Text(
@@ -337,19 +310,42 @@ class _AlarmScreenState extends State<AlarmScreen> {
     );
   }
 
+  /// 🔥 MAIN UI
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("অফলাইন অ্যালার্ম", style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("অফলাইন অ্যালার্ম")),
+      body: _notes.isEmpty
+          ? const Center(child: Text("কোনো অ্যালার্ম নেই"))
+          : ListView.builder(
+              itemCount: _notes.length,
+              itemBuilder: (context, index) {
+                final note = _notes[index];
+
+                return Card(
+                  child: ListTile(
+                    title: Text(note.title),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (note.alarmTime != null)
+                          Text("⏰ ${_formatDate(note.alarmTime!)}"),
+                        if (note.repeatDays != null)
+                          Text("🔁 ${note.repeatDays}"),
+                      ],
+                    ),
+                    onTap: () => _showNoteBottomSheet(note: note), // edit
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => _deleteNote(note),
+                    ),
+                  ),
+                );
+              },
+            ),
       floatingActionButton: FloatingActionButton(
-        heroTag: 'alarm_screen_fab',
         onPressed: () => _showNoteBottomSheet(),
-        backgroundColor: const Color(0xFF60DCB2),
-        child: const Icon(Icons.add_alarm, color: Color(0xFF003829)),
+        child: const Icon(Icons.add),
       ),
     );
   }

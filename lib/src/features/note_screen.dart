@@ -432,7 +432,7 @@ class _NoteScreenState extends State<NoteScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        note.content,
+                        note.content ?? "",
                         style: TextStyle(
                           color: isDark ? Colors.white70 : Colors.black54,
                         ),

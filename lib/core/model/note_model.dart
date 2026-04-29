@@ -4,22 +4,26 @@ class NoteModel {
   final String id;
   final String userId;
   final String title;
-  final String content;
+  final String? content;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime? alarmTime;
-  final List<int>? repeatDays; // ১ (সোমবার) থেকে ৭ (রবিবার)
+  final List<int>? repeatDays;
 
   NoteModel({
     required this.id,
     required this.userId,
     required this.title,
-    required this.content,
+    this.content,
     required this.createdAt,
     required this.updatedAt,
     this.alarmTime,
     this.repeatDays,
   });
+
+  // =========================
+  // 🔥 FIREBASE (Firestore)
+  // =========================
 
   Map<String, dynamic> toMap() {
     return {
@@ -27,9 +31,10 @@ class NoteModel {
       'userId': userId,
       'title': title,
       'content': content,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
-      'alarmTime': alarmTime,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'updatedAt': Timestamp.fromDate(updatedAt),
+      'alarmTime':
+      alarmTime != null ? Timestamp.fromDate(alarmTime!) : null,
       'repeatDays': repeatDays,
     };
   }
@@ -47,6 +52,38 @@ class NoteModel {
           : null,
       repeatDays: map['repeatDays'] != null
           ? List<int>.from(map['repeatDays'])
+          : null,
+    );
+  }
+
+  // =========================
+  // 🔥 LOCAL (SharedPreferences)
+  // =========================
+
+  Map<String, dynamic> toJson() => {
+    "id": id,
+    "userId": userId,
+    "title": title,
+    "content": content,
+    "createdAt": createdAt.toIso8601String(),
+    "updatedAt": updatedAt.toIso8601String(),
+    "alarmTime": alarmTime?.toIso8601String(),
+    "repeatDays": repeatDays,
+  };
+
+  factory NoteModel.fromJson(Map<String, dynamic> json) {
+    return NoteModel(
+      id: json["id"] ?? '',
+      userId: json["userId"] ?? '',
+      title: json["title"] ?? '',
+      content: json["content"] ?? '',
+      createdAt: DateTime.parse(json["createdAt"]),
+      updatedAt: DateTime.parse(json["updatedAt"]),
+      alarmTime: json["alarmTime"] != null
+          ? DateTime.parse(json["alarmTime"])
+          : null,
+      repeatDays: json["repeatDays"] != null
+          ? List<int>.from(json["repeatDays"])
           : null,
     );
   }

@@ -3,6 +3,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 
+import '../model/note_model.dart';
+
 @pragma('vm:entry-point')
 void notificationTapBackground(NotificationResponse details) async {
   if (details.actionId == 'again_action') {
@@ -100,6 +102,39 @@ class NotificationService {
           AndroidFlutterLocalNotificationsPlugin
         >()
         ?.requestExactAlarmsPermission();
+  }
+
+  Future<void> restoreAlarms(List<NoteModel> notes) async {
+    for (var note in notes) {
+      if (note.alarmTime != null) {
+        /// clear old
+        await cancelNotification(note.id.hashCode);
+        for (int i = 1; i <= 7; i++) {
+          await cancelNotification(note.id.hashCode + i);
+        }
+
+        /// single alarm
+        if (note.repeatDays == null || note.repeatDays!.isEmpty) {
+          if (note.alarmTime!.isAfter(DateTime.now())) {
+            await scheduleNotification(
+              note.id.hashCode,
+              "নোট: ${note.title}",
+              note.content ?? "",
+              note.alarmTime!,
+            );
+          }
+        } else {
+          /// repeat alarm
+          await scheduleWeeklyNotifications(
+            note.id.hashCode,
+            "নোট: ${note.title}",
+            note.content ?? "",
+            TimeOfDay.fromDateTime(note.alarmTime!),
+            note.repeatDays!,
+          );
+        }
+      }
+    }
   }
 
   Future<void> scheduleNotification(

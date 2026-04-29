@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // SystemUiOverlayStyle এর জন্য
 import 'package:uuid/uuid.dart';
 
 import '../../core/model/note_model.dart';
@@ -288,7 +289,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
                                 "অ্যালার্ম: ${titleController.text}",
                                 "এখনই সময়!",
                                 finalAlarmTime,
-                                soundName: "sound_alarm"
+                                soundName: "sound_alarm",
                               );
                             }
                           } else {
@@ -299,6 +300,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
                                   "এখনই সময়!",
                                   TimeOfDay.fromDateTime(finalAlarmTime),
                                   selectedRepeatDays,
+                                  soundName: "sound_alarm",
                                 );
                           }
 
@@ -339,6 +341,12 @@ class _AlarmScreenState extends State<AlarmScreen> {
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
+        // স্ট্যাটাস বারের আইকন কালার ঠিক করার জন্য
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        ),
       ),
       body: _notes.isEmpty
           ? Center(
@@ -400,9 +408,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 4),
-                        if (note.title != null ||
-                            note.title != '' ||
-                            note.title!.isNotEmpty)
+                        if (note.title != null && note.title!.isNotEmpty)
                           Text(
                             note.title ?? "",
                             style: TextStyle(
@@ -410,9 +416,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
                               color: isDark ? Colors.white70 : Colors.black54,
                             ),
                           ),
-                        if (note.title != null ||
-                            note.title != '' ||
-                            note.title!.isNotEmpty)
+                        if (note.title != null && note.title!.isNotEmpty)
                           const SizedBox(height: 8),
                         Row(
                           children: [

@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // SystemUiOverlayStyle এর জন্য
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hisab_app/main.dart';
 import 'package:hisab_app/src/features/edit_profile_screen.dart';
@@ -27,6 +28,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
+        // স্ট্যাটাস বারের আইকন কালার ঠিক করার জন্য
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark, // Android
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light, // iOS
+        ),
         title: Text(
           "প্রোফাইল",
           style: TextStyle(

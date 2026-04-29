@@ -86,8 +86,9 @@ class NotificationService {
             nextTime,
           );
         }
-        if (details.actionId == 'cancel_action')
+        if (details.actionId == 'cancel_action') {
           await cancelNotification(details.id ?? 0);
+        }
       },
       onDidReceiveBackgroundNotificationResponse: notificationTapBackground,
     );

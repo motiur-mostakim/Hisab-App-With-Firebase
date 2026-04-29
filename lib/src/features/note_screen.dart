@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/model/note_model.dart';
+import '../../core/model/notification_model.dart';
 import '../../core/services/note_service.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/services/fcm_notification_services.dart';
 
 class NoteScreen extends StatefulWidget {
   const NoteScreen({super.key});
@@ -15,6 +17,7 @@ class NoteScreen extends StatefulWidget {
 class _NoteScreenState extends State<NoteScreen> {
   final NoteService _noteService = NoteService();
   final NotificationService _notificationService = NotificationService();
+  final FcmNotificationServices _fcmStorage = FcmNotificationServices();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   final List<String> _weekDays = [
@@ -31,7 +34,127 @@ class _NoteScreenState extends State<NoteScreen> {
   void initState() {
     super.initState();
     _notificationService.initNotification();
+    _checkAndShowInAppMessage();
+    
+    // Listen for real-time in-app messages
+    _fcmStorage.messageStream.listen((message) {
+      if (message != null && mounted) {
+        _showInAppMessageDialog(message);
+      }
+    });
   }
+
+  Future<void> _checkAndShowInAppMessage() async {
+    final messages = await _fcmStorage.getSavedNotifications();
+    if (messages.isNotEmpty && mounted) {
+      // Show the latest message as a popup
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showInAppMessageDialog(messages.first);
+      });
+    }
+  }
+
+  void _showInAppMessageDialog(NotificationModel message) {
+    showDialog(context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final hasImage = message.imageUrl != null && message.imageUrl!.isNotEmpty;
+
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: isDark ? const Color(0xFF1E1E32) : Colors.white,
+          clipBehavior: Clip.antiAlias, // ডায়ালগের কোণাগুলো যাতে ইমেজের সাথে সুন্দর দেখায়
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (hasImage)
+                Stack(
+                  children: [
+                    Image.network(
+                      message.imageUrl!,
+                      width: double.infinity,
+                      height: 180,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        height: 180,
+                        width: double.infinity,
+                        color: Colors.grey.withOpacity(0.1),
+                        child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                      ),
+                    ),
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: CircleAvatar(
+                        radius: 15,
+                        backgroundColor: Colors.black26,
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(Icons.close, color: Colors.white, size: 18),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Align(
+                  alignment: Alignment.topRight,
+                  child: IconButton(
+                    icon: Icon(Icons.close, color: isDark ? Colors.white70 : Colors.black54),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                child: Column(
+                  children: [
+                    Text(
+                      message.title,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      message.body,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF60DCB2),
+                        minimumSize: const Size(double.infinity, 45),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text(
+                        "ঠিক আছে",
+                        style: TextStyle(
+                          color: Color(0xFF003829),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
 
   String _formatDate(DateTime date) {
     return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
@@ -293,7 +416,6 @@ class _NoteScreenState extends State<NoteScreen> {
                     }
 
                     if (alarmTime != null) {
-                      // আগের সব রিমাইন্ডার ক্যানসেল করা
                       await _notificationService.cancelNotification(
                         noteId.hashCode,
                       );
@@ -304,7 +426,6 @@ class _NoteScreenState extends State<NoteScreen> {
                       }
 
                       if (selectedRepeatDays.isEmpty) {
-                        // শুধু একবারের জন্য
                         if (alarmTime!.isAfter(DateTime.now())) {
                           await _notificationService.scheduleNotification(
                             noteId.hashCode,
@@ -314,7 +435,6 @@ class _NoteScreenState extends State<NoteScreen> {
                           );
                         }
                       } else {
-                        // নির্দিষ্ট বার অনুযায়ী রিপিট করার জন্য
                         await _notificationService.scheduleWeeklyNotifications(
                           noteId.hashCode,
                           "নোট রিমাইন্ডার: ${titleController.text}",
@@ -366,13 +486,18 @@ class _NoteScreenState extends State<NoteScreen> {
       body: StreamBuilder<List<NoteModel>>(
         stream: _noteService.getNotes(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting)
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
-          if (!snapshot.hasData || snapshot.data!.isEmpty)
+          }
+          
+          final notes = snapshot.data ?? [];
+          
+          if (notes.isEmpty) {
             return const Center(
               child: Text("কোনো নোট নেই", style: TextStyle(color: Colors.grey)),
             );
-          final notes = snapshot.data!;
+          }
+
           return ListView.builder(
             padding: const EdgeInsets.all(12),
             itemCount: notes.length,

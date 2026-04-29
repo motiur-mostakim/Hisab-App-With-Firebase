@@ -2,6 +2,7 @@ class NotificationModel {
   final String id;
   final String title;
   final String body;
+  final String? imageUrl;
   final DateTime timestamp;
   final bool isRead;
 
@@ -9,6 +10,7 @@ class NotificationModel {
     required this.id,
     required this.title,
     required this.body,
+    this.imageUrl,
     required this.timestamp,
     this.isRead = false,
   });
@@ -18,6 +20,7 @@ class NotificationModel {
       'id': id,
       'title': title,
       'body': body,
+      'imageUrl': imageUrl,
       'timestamp': timestamp.toIso8601String(),
       'isRead': isRead,
     };
@@ -28,6 +31,7 @@ class NotificationModel {
       id: map['id'] ?? '',
       title: map['title'] ?? '',
       body: map['body'] ?? '',
+      imageUrl: map['imageUrl'],
       timestamp: DateTime.parse(map['timestamp']),
       isRead: map['isRead'] ?? false,
     );

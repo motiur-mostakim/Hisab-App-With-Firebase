@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../model/notification_model.dart';
@@ -5,6 +6,12 @@ import '../model/notification_model.dart';
 class FcmNotificationServices {
   static const String _notificationKey = "notifications";
   static const String _tokenKey = "fcm_token";
+
+  // Stream for real-time updates
+  static final StreamController<NotificationModel?> _messageStreamController = 
+      StreamController<NotificationModel?>.broadcast();
+  
+  Stream<NotificationModel?> get messageStream => _messageStreamController.stream;
 
   Future<void> saveNotification(NotificationModel model) async {
     final prefs = await SharedPreferences.getInstance();
@@ -15,6 +22,9 @@ class FcmNotificationServices {
     existing.add(jsonEncode(model.toMap()));
 
     await prefs.setStringList(_notificationKey, existing);
+    
+    // Notify listeners about the new message
+    _messageStreamController.add(model);
   }
 
   Future<List<NotificationModel>> getSavedNotifications() async {
@@ -33,6 +43,7 @@ class FcmNotificationServices {
   Future<void> clearNotifications() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_notificationKey);
+    _messageStreamController.add(null);
   }
 
   Future<int> getNotificationCount() async {

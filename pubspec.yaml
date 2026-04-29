@@ -25,6 +25,7 @@ dependencies:
   shared_preferences: ^2.2.2
   audioplayers: ^5.2.1
   firebase_messaging:
+  firebase_in_app_messaging:
 
 dev_dependencies:
   flutter_test:

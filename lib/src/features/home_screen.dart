@@ -26,7 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadNotificationCount();
-    FCMService().triggerInAppEvent('home_open');
+    // FCMService().triggerInAppEvent('home_open');
   }
 
   double _getMonthlyExpense(List<TransactionModel> transactions) {

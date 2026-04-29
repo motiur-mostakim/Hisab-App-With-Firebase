@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class NoteModel {
   final String id;
   final String userId;
-  final String title;
+  final String? title;
   final String? content;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -13,7 +13,7 @@ class NoteModel {
   NoteModel({
     required this.id,
     required this.userId,
-    required this.title,
+    this.title,
     this.content,
     required this.createdAt,
     required this.updatedAt,

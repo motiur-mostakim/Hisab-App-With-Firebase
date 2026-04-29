@@ -399,7 +399,7 @@ class _NoteScreenState extends State<NoteScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              note.title,
+                              note.title ?? "",
                               style: TextStyle(
                                 color: isDark ? Colors.white : Colors.black87,
                                 fontWeight: FontWeight.bold,

@@ -8,7 +8,7 @@ import 'core/services/FCM_services.dart';
 import 'firebase_options.dart';
 
 // Global theme notifier
-final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.dark);
+final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.light);
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {

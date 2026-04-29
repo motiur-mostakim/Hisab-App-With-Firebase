@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:uuid/uuid.dart';
@@ -24,6 +25,7 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 class FCMService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  final FirebaseInAppMessaging _fiam = FirebaseInAppMessaging.instance;
   final FlutterLocalNotificationsPlugin _local =
   FlutterLocalNotificationsPlugin();
 
@@ -31,11 +33,18 @@ class FCMService {
   FcmNotificationServices();
 
   Future<void> init() async {
+    // 1. Request permission for push notifications
     await _fcm.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
+
+    // 2. Configure In-App Messaging
+    // Ensure messages are NOT suppressed
+    await _fiam.setMessagesSuppressed(false);
+    // Enable automatic data collection (required for FIAM to work)
+    await _fiam.setAutomaticDataCollectionEnabled(true);
 
     FirebaseMessaging.onBackgroundMessage(
         firebaseMessagingBackgroundHandler);
@@ -98,5 +107,11 @@ class FCMService {
         ),
       );
     });
+  }
+
+  /// Manually trigger a FIAM event
+  Future<void> triggerInAppEvent(String eventName) async {
+    await _fiam.triggerEvent(eventName);
+    print("FIAM Event Triggered: $eventName");
   }
 }

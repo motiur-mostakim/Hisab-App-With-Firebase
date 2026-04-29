@@ -6,6 +6,7 @@ import '../model/notification_model.dart';
 class FcmNotificationServices {
   static const String _notificationKey = "notifications";
   static const String _tokenKey = "fcm_token";
+  static const String _suppressKey = "fiam_suppressed";
 
   Future<void> saveNotification(NotificationModel model) async {
     final prefs = await SharedPreferences.getInstance();
@@ -48,5 +49,16 @@ class FcmNotificationServices {
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_tokenKey);
+  }
+
+  // Manage In-App Messaging Suppression
+  Future<void> setMessagesSuppressed(bool suppressed) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_suppressKey, suppressed);
+  }
+
+  Future<bool> isMessagesSuppressed() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_suppressKey) ?? false;
   }
 }

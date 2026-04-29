@@ -4,6 +4,7 @@ import 'package:hisab_app/core/services/fcm_notification_services.dart';
 import 'package:hisab_app/src/features/notification_screen.dart';
 
 import '../../core/model/transaction_model.dart';
+import '../../core/services/FCM_services.dart';
 import '../../core/services/transaction_service.dart';
 import 'add_transaction_screen.dart';
 import 'calculator_screen.dart';
@@ -25,6 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadNotificationCount();
+    FCMService().triggerInAppEvent('home_open');
   }
 
   double _getMonthlyExpense(List<TransactionModel> transactions) {

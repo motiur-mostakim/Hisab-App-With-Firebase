@@ -26,6 +26,8 @@ dependencies:
   audioplayers: ^5.2.1
   firebase_messaging:
   firebase_in_app_messaging:
+  http: ^1.1.0
+  path_provider: ^2.1.1
 
 dev_dependencies:
   flutter_test:

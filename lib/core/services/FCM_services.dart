@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_in_app_messaging/firebase_in_app_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../main.dart';
@@ -27,10 +30,9 @@ class FCMService {
   final FirebaseMessaging _fcm = FirebaseMessaging.instance;
   final FirebaseInAppMessaging _fiam = FirebaseInAppMessaging.instance;
   final FlutterLocalNotificationsPlugin _local =
-  FlutterLocalNotificationsPlugin();
+      FlutterLocalNotificationsPlugin();
 
-  final FcmNotificationServices _storage =
-  FcmNotificationServices();
+  final FcmNotificationServices _storage = FcmNotificationServices();
 
   Future<void> init() async {
     // 1. Request permission for push notifications
@@ -41,13 +43,10 @@ class FCMService {
     );
 
     // 2. Configure In-App Messaging
-    // Ensure messages are NOT suppressed
     await _fiam.setMessagesSuppressed(false);
-    // Enable automatic data collection (required for FIAM to work)
     await _fiam.setAutomaticDataCollectionEnabled(true);
 
-    FirebaseMessaging.onBackgroundMessage(
-        firebaseMessagingBackgroundHandler);
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
     String? token = await _fcm.getToken();
     print("FCM TOKEN: $token");
@@ -68,7 +67,7 @@ class FCMService {
 
     await _local
         .resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
 
     FirebaseMessaging.onMessage.listen((message) async {
@@ -84,6 +83,20 @@ class FCMService {
 
         await _storage.saveNotification(model);
 
+        // Handle Image if present
+        String? imageUrl = notification.android?.imageUrl ?? notification.apple?.imageUrl;
+        
+        BigPictureStyleInformation? bigPictureStyleInformation;
+        if (imageUrl != null) {
+          final String filePath = await _downloadAndSaveFile(imageUrl, 'notification_img');
+          bigPictureStyleInformation = BigPictureStyleInformation(
+            FilePathAndroidBitmap(filePath),
+            largeIcon: FilePathAndroidBitmap(filePath),
+            contentTitle: notification.title,
+            summaryText: notification.body,
+          );
+        }
+
         _local.show(
           notification.hashCode,
           notification.title,
@@ -93,6 +106,7 @@ class FCMService {
               channel.id,
               channel.name,
               icon: '@mipmap/ic_launcher',
+              styleInformation: bigPictureStyleInformation,
             ),
           ),
         );
@@ -109,7 +123,15 @@ class FCMService {
     });
   }
 
-  /// Manually trigger a FIAM event
+  Future<String> _downloadAndSaveFile(String url, String fileName) async {
+    final Directory directory = await getApplicationDocumentsDirectory();
+    final String filePath = '${directory.path}/$fileName';
+    final http.Response response = await http.get(Uri.parse(url));
+    final File file = File(filePath);
+    await file.writeAsBytes(response.bodyBytes);
+    return filePath;
+  }
+
   Future<void> triggerInAppEvent(String eventName) async {
     await _fiam.triggerEvent(eventName);
     print("FIAM Event Triggered: $eventName");

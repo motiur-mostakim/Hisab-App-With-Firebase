@@ -14,8 +14,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF1A1A2E),
+      backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
       body: SafeArea(
         child: Row(
           children: [
@@ -24,18 +26,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.all(40),
-                  color: const Color(0xFF0C0C1F),
+                  color: isDark ? const Color(0xFF0C0C1F) : Colors.grey[100],
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Icon(
+                    children: [
+                      const Icon(
                         Icons.account_balance_wallet,
                         color: Color(0xFF60DCB2),
                         size: 50,
                       ),
-                      SizedBox(height: 20),
-                      Text(
+                      const SizedBox(height: 20),
+                      const Text(
                         "অর্থ সঞ্চয়",
                         style: TextStyle(
                           color: Color(0xFF60DCB2),
@@ -43,19 +45,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 20),
+                      const SizedBox(height: 20),
                       Text(
                         "আপনার সম্পদ,\nআপনার নিয়ন্ত্রণ।",
                         style: TextStyle(
                           fontSize: 36,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: isDark ? Colors.white : Colors.black87,
                         ),
                       ),
-                      SizedBox(height: 10),
+                      const SizedBox(height: 10),
                       Text(
                         "সহজে আপনার অর্থ ব্যবস্থাপনা করুন",
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
                       ),
                     ],
                   ),
@@ -70,18 +72,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     /// TITLE
-                    const Text(
+                    Text(
                       "অ্যাকাউন্ট তৈরি করুন",
                       style: TextStyle(
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: isDark ? Colors.white : Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 5),
-                    const Text(
+                    Text(
                       "আপনার আর্থিক ভবিষ্যৎ সুরক্ষিত করতে আজই যুক্ত হোন",
-                      style: TextStyle(color: Colors.white70),
+                      style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
                     ),
 
                     const SizedBox(height: 30),
@@ -118,10 +120,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             });
                           },
                         ),
-                        const Expanded(
+                        Expanded(
                           child: Text(
                             "আমি সকল শর্তাবলী মেনে নিচ্ছি",
-                            style: TextStyle(color: Colors.white70),
+                            style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
                           ),
                         ),
                       ],
@@ -155,19 +157,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     /// LOGIN LINK
                     Center(
-                      child: RichText(
-                        text: const TextSpan(
-                          text: "ইতিমধ্যে অ্যাকাউন্ট আছে? ",
-                          style: TextStyle(color: Colors.white70),
-                          children: [
-                            TextSpan(
-                              text: "লগইন করুন",
-                              style: TextStyle(
-                                color: Color(0xFF60DCB2),
-                                fontWeight: FontWeight.bold,
+                      child: InkWell(
+                        onTap: () => Navigator.pop(context),
+                        child: RichText(
+                          text: TextSpan(
+                            text: "ইতিমধ্যে অ্যাকাউন্ট আছে? ",
+                            style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                            children: const [
+                              TextSpan(
+                                text: "লগইন করুন",
+                                style: TextStyle(
+                                  color: Color(0xFF60DCB2),
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -189,16 +194,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
     bool isPassword = false,
     bool isFirst = true,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(color: Colors.white60)),
+          Text(
+            label,
+            style: TextStyle(color: isDark ? Colors.white60 : Colors.black54, fontSize: 12),
+          ),
           const SizedBox(height: 5),
           TextField(
             obscureText: isPassword ? (isFirst ? obscure1 : obscure2) : false,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
             decoration: InputDecoration(
               prefixIcon: Icon(icon, color: Colors.grey),
               suffixIcon: isPassword
@@ -223,10 +233,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
               hintText: hint,
               hintStyle: const TextStyle(color: Colors.grey),
               filled: true,
-              fillColor: const Color(0xFF333348),
-              border: OutlineInputBorder(
+              fillColor: isDark 
+                  ? const Color(0xFF333348) 
+                  : Colors.grey[50],
+              enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(15),
-                borderSide: BorderSide.none,
+                borderSide: isDark ? BorderSide.none : BorderSide(color: Colors.grey[300]!),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: const BorderSide(color: Color(0xFF60DCB2)),
               ),
             ),
           ),

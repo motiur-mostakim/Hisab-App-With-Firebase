@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hisab_app/main.dart';
 import 'package:hisab_app/src/features/edit_profile_screen.dart';
 import 'package:hisab_app/src/features/debt_history_screen.dart';
@@ -170,7 +171,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             /// 🔥 LOGOUT
             InkWell(
               onTap: () async {
-                await auth.signOut();
+                try {
+                  // Sign out from Google to allow account selection next time
+                  await GoogleSignIn().signOut();
+                  // Sign out from Firebase
+                  await auth.signOut();
+                } catch (e) {
+                  debugPrint("Error during sign out: $e");
+                  // Fallback: just sign out from Firebase
+                  await auth.signOut();
+                }
               },
               child: Container(
                 padding: const EdgeInsets.all(14),

@@ -1,8 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:hisab_app/src/features/home_screen.dart';
-import 'package:hisab_app/src/features/main_screen.dart';
 import 'package:hisab_app/src/features/registration_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,6 +13,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  bool _isLoading = false;
 
   Future<void> _signInWithGoogle() async {
     setState(() {
@@ -22,6 +21,9 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      // Ensure we start fresh
+      await _googleSignIn.signOut();
+      
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
@@ -45,18 +47,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (userCredential.user != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Successfully sign in'),
-            backgroundColor: Colors.white,
+          const SnackBar(
+            content: Text('Successfully signed in'),
+            backgroundColor: Color(0xFF60DCB2),
           ),
-        );
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
         );
       }
     } catch (e) {
-      print("----------error---------------$e");
+      debugPrint("----------error---------------$e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -74,12 +72,12 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  bool _isLoading = false;
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0C0C1F),
+      backgroundColor: isDark ? const Color(0xFF0C0C1F) : Colors.white,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
@@ -92,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 70,
                 width: 70,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E32),
+                  color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Icon(
@@ -105,21 +103,21 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 20),
 
               /// TITLE
-              const Text(
+              Text(
                 "স্বাগতম",
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFFE2E0FC),
+                  color: isDark ? const Color(0xFFE2E0FC) : Colors.black87,
                 ),
               ),
 
               const SizedBox(height: 10),
 
-              const Text(
+              Text(
                 "আপনার অর্থ ব্যবস্থাপনা শুরু করতে লগইন করুন",
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white60),
+                style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
               ),
 
               const SizedBox(height: 30),
@@ -128,8 +126,11 @@ class _LoginScreenState extends State<LoginScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E1E32).withOpacity(0.7),
+                  color: isDark 
+                      ? const Color(0xFF1E1E32).withOpacity(0.7) 
+                      : Colors.grey[50],
                   borderRadius: BorderRadius.circular(25),
+                  border: isDark ? null : Border.all(color: Colors.grey[300]!),
                 ),
                 child: Column(
                   children: [
@@ -181,16 +182,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     /// DIVIDER
                     Row(
-                      children: const [
-                        Expanded(child: Divider(color: Colors.grey)),
+                      children: [
+                        Expanded(child: Divider(color: isDark ? Colors.grey : Colors.grey[400])),
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
                           child: Text(
                             "অথবা",
-                            style: TextStyle(color: Colors.grey),
+                            style: TextStyle(color: isDark ? Colors.grey : Colors.black54),
                           ),
                         ),
-                        Expanded(child: Divider(color: Colors.grey)),
+                        Expanded(child: Divider(color: isDark ? Colors.grey : Colors.grey[400])),
                       ],
                     ),
 
@@ -198,20 +199,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     /// GOOGLE LOGIN
                     InkWell(
-                      onTap: _signInWithGoogle,
+                      onTap: _isLoading ? null : _signInWithGoogle,
                       child: Container(
                         width: double.infinity,
                         height: 55,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF28283D),
+                          color: isDark ? const Color(0xFF28283D) : Colors.white,
                           borderRadius: BorderRadius.circular(18),
+                          border: isDark ? null : Border.all(color: Colors.grey[300]!),
                         ),
                         child: Center(
                           child: _isLoading
-                              ? CircularProgressIndicator()
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF60DCB2),
+                                  ),
+                                )
                               : Text(
                                   "গুগল দিয়ে প্রবেশ করুন",
-                                  style: TextStyle(color: Colors.white),
+                                  style: TextStyle(color: isDark ? Colors.white : Colors.black87),
                                 ),
                         ),
                       ),
@@ -227,17 +236,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => RegisterScreen()),
+                    MaterialPageRoute(builder: (context) => const RegisterScreen()),
                   );
                 },
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Text(
                       "অ্যাকাউন্ট নেই? ",
-                      style: TextStyle(color: Colors.white70),
+                      style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
                     ),
-                    Text(
+                    const Text(
                       "রেজিস্ট্রেশন করুন",
                       style: TextStyle(
                         color: Color(0xFF60DCB2),
@@ -261,26 +270,39 @@ class _LoginScreenState extends State<LoginScreen> {
     required String label,
     bool isPassword = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white60, fontSize: 12),
+          style: TextStyle(color: isDark ? Colors.white60 : Colors.black54, fontSize: 12),
         ),
         const SizedBox(height: 8),
         TextField(
           obscureText: isPassword,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
           decoration: InputDecoration(
             prefixIcon: Icon(icon, color: Colors.grey),
             hintText: hint,
             hintStyle: const TextStyle(color: Colors.grey),
             filled: true,
-            fillColor: const Color(0xFF333348).withOpacity(0.5),
-            border: OutlineInputBorder(
+            fillColor: isDark 
+                ? const Color(0xFF333348).withOpacity(0.5) 
+                : Colors.white,
+            enabledBorder: isDark 
+                ? OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide.none,
+                  )
+                : OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+            focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(18),
-              borderSide: BorderSide.none,
+              borderSide: const BorderSide(color: Color(0xFF60DCB2)),
             ),
           ),
         ),

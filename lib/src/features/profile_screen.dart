@@ -48,7 +48,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
         child: Column(
           children: [
-            // ... (Existing Profile UI)
             Stack(
               alignment: Alignment.bottomRight,
               children: [

@@ -233,24 +233,6 @@ class _AlarmScreenState extends State<AlarmScreen> {
                       ),
                     ],
 
-                    const SizedBox(height: 15),
-
-                    /// Content
-                    TextField(
-                      controller: contentController,
-                      maxLines: 4,
-                      decoration: InputDecoration(
-                        hintText: "বিস্তারিত...",
-                        filled: true,
-                        fillColor:
-                        isDark ? Colors.white10 : Colors.grey[100],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-
                     const SizedBox(height: 25),
 
                     /// Save Button
@@ -276,7 +258,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
                             id: noteId,
                             userId: userId,
                             title: titleController.text,
-                            content: contentController.text,
+                            content: '',
                             createdAt: selectedDate,
                             updatedAt: DateTime.now(),
                             alarmTime: alarmTime,

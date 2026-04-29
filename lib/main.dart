@@ -3,15 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:hisab_app/core/services/notification_service.dart';
 import 'package:hisab_app/src/features/splash_screen.dart'; // Import SplashScreen
 
+import 'core/services/FCM_services.dart';
 import 'firebase_options.dart';
 
 // Global theme notifier
 final ValueNotifier<ThemeMode> themeNotifier = ValueNotifier(ThemeMode.dark);
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await NotificationService().initNotification();
+  await FCMService().init();
   runApp(const MyApp());
 }
 
@@ -49,6 +52,7 @@ class MyApp extends StatelessWidget {
             colorSchemeSeed: const Color(0xFF60DCB2),
           ),
           themeMode: currentMode,
+          navigatorKey: navigatorKey,
           home: const SplashScreen(), // Set SplashScreen as initial route
         );
       },

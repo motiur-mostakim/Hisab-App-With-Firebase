@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:hisab_app/core/services/fcm_notification_services.dart';
+import 'package:hisab_app/src/features/notification_screen.dart';
 
 import '../../core/model/transaction_model.dart';
 import '../../core/services/transaction_service.dart';
@@ -16,7 +18,14 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final FirebaseAuth auth = FirebaseAuth.instance;
   final TransactionService _transactionService = TransactionService();
-  final double monthlyBudget = 3500.0; // মাসিক বাজেট লিমিট
+  final double monthlyBudget = 3500.0;
+  int _notificationCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotificationCount();
+  }
 
   double _getMonthlyExpense(List<TransactionModel> transactions) {
     final now = DateTime.now();
@@ -52,6 +61,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Future<void> _loadNotificationCount() async {
+    final count = await FcmNotificationServices().getNotificationCount();
+    setState(() {
+      _notificationCount = count;
+    });
+  }
+
   void _showCalculator() {
     Navigator.push(
       context,
@@ -79,10 +95,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        actions: const [
+        actions: [
           Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Icon(Icons.notifications_none),
+            padding: const EdgeInsets.only(right: 12),
+            child: IconButton(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationScreen(),
+                  ),
+                );
+                _loadNotificationCount();
+              },
+              icon: const Icon(Icons.notifications_none),
+            ),
           ),
         ],
       ),
@@ -90,7 +117,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Top Horizontally buttons for Income and Expense
             Row(
               children: [
                 Expanded(
@@ -171,7 +197,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    "\৳${(monthlyExpense - monthlyBudget).toStringAsFixed(2)} অতিরিক্ত খরচ করেছেন",
+                                    "৳${(monthlyExpense - monthlyBudget).toStringAsFixed(2)} অতিরিক্ত খরচ করেছেন",
                                     style: const TextStyle(
                                       color: Colors.red,
                                       fontSize: 12,
@@ -239,14 +265,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                "\৳${monthlyExpense.toStringAsFixed(2)}",
+                                "৳${monthlyExpense.toStringAsFixed(2)}",
                                 style: TextStyle(
                                   color: isDark ? Colors.white : Colors.black87,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
-                                "সীমা: \৳${monthlyBudget.toStringAsFixed(2)}",
+                                "সীমা: ৳${monthlyBudget.toStringAsFixed(2)}",
                                 style: TextStyle(
                                   color: isDark
                                       ? Colors.white54
@@ -326,37 +352,56 @@ class _ActionBtn extends StatelessWidget {
 
 class _BalanceSection extends StatelessWidget {
   final double balance;
-
   const _BalanceSection({required this.balance});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          "বর্তমান মোট সম্পদ",
-          textAlign: TextAlign.center,
-          style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF60DCB2), Color(0xFF45B08C)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        const SizedBox(height: 5),
-        Text(
-          "\৳${balance.toStringAsFixed(2)}",
-          style: TextStyle(
-            fontSize: 40,
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black87,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF60DCB2).withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
-        ),
-      ],
+        ],
+      ),
+      child: Column(
+        children: [
+          const Text(
+            "মোট ব্যালেন্স",
+            style: TextStyle(
+              color: Color(0xFF003829),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "৳${balance.toStringAsFixed(2)}",
+            style: const TextStyle(
+              color: Color(0xFF003829),
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _SummaryCards extends StatelessWidget {
   final TransactionService transactionService;
-
   const _SummaryCards({required this.transactionService});
 
   @override
@@ -365,21 +410,24 @@ class _SummaryCards extends StatelessWidget {
       stream: transactionService.getDailyStats(),
       builder: (context, snapshot) {
         final stats = snapshot.data ?? {'income': 0.0, 'expense': 0.0};
-        final income = stats['income'] ?? 0.0;
-        final expense = stats['expense'] ?? 0.0;
-
-        return Column(
+        return Row(
           children: [
-            _CardItem(
-              title: "মোট আয়",
-              amount: "+\৳${income.toStringAsFixed(2)}",
-              color: Colors.green,
+            Expanded(
+              child: _SummaryCard(
+                title: "আয়",
+                amount: stats['income'] ?? 0.0,
+                icon: Icons.arrow_upward,
+                color: Colors.green,
+              ),
             ),
-            const SizedBox(height: 10),
-            _CardItem(
-              title: "মোট ব্যয়",
-              amount: "-\৳${expense.toStringAsFixed(2)}",
-              color: Colors.red,
+            const SizedBox(width: 16),
+            Expanded(
+              child: _SummaryCard(
+                title: "ব্যয়",
+                amount: stats['expense'] ?? 0.0,
+                icon: Icons.arrow_downward,
+                color: Colors.red,
+              ),
             ),
           ],
         );
@@ -388,14 +436,16 @@ class _SummaryCards extends StatelessWidget {
   }
 }
 
-class _CardItem extends StatelessWidget {
+class _SummaryCard extends StatelessWidget {
   final String title;
-  final String amount;
+  final double amount;
+  final IconData icon;
   final Color color;
 
-  const _CardItem({
+  const _SummaryCard({
     required this.title,
     required this.amount,
+    required this.icon,
     required this.color,
   });
 
@@ -403,26 +453,39 @@ class _CardItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
-        borderRadius: BorderRadius.circular(16),
+        color: isDark ? const Color(0xFF1E1E32) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.grey.shade200,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(height: 12),
           Text(
             title,
-            style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            amount,
             style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white70 : Colors.black54,
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            "৳${amount.toStringAsFixed(2)}",
+            style: const TextStyle(
               fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -433,7 +496,6 @@ class _CardItem extends StatelessWidget {
 
 class _BottomSection extends StatelessWidget {
   final TransactionService transactionService;
-
   const _BottomSection({required this.transactionService});
 
   @override
@@ -442,34 +504,46 @@ class _BottomSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "সাম্প্রতিক কার্যক্রম",
-          style: TextStyle(
-            fontSize: 18,
-            color: isDark ? Colors.white : Colors.black87,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "সাম্প্রতিক লেনদেন",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            TextButton(
+              onPressed: () {
+                // Navigate to history
+              },
+              child: const Text(
+                "সব দেখুন",
+                style: TextStyle(color: Color(0xFF60DCB2)),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         StreamBuilder<List<TransactionModel>>(
           stream: transactionService.getTransactions(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
-
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return Center(
-                child: Text(
-                  "কোনো লেনদেন নেই",
-                  style: TextStyle(
-                    color: isDark ? Colors.white54 : Colors.black54,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Text(
+                    "কোনো লেনদেন নেই",
+                    style: TextStyle(
+                      color: isDark ? Colors.white54 : Colors.black45,
+                    ),
                   ),
                 ),
               );
             }
 
-            final transactions = snapshot.data!.take(10).toList();
+            final transactions = snapshot.data!.take(5).toList();
 
             return ListView.builder(
               shrinkWrap: true,
@@ -477,59 +551,80 @@ class _BottomSection extends StatelessWidget {
               itemCount: transactions.length,
               itemBuilder: (context, index) {
                 final txn = transactions[index];
-                return _TransactionItem(
-                  title: txn.category,
-                  subtitle: txn.note,
-                  amount:
-                      "${txn.isExpense ? '-' : '+'}\৳${txn.amount.toStringAsFixed(2)}",
-                  isExpense: txn.isExpense,
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF1E1E32) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDark ? Colors.white10 : Colors.grey.shade200,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: (txn.isExpense ? Colors.red : Colors.green)
+                              .withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          txn.isExpense ? Icons.remove : Icons.add,
+                          color: txn.isExpense ? Colors.red : Colors.green,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              txn.category,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              txn.note,
+                              style: TextStyle(
+                                color: isDark ? Colors.white54 : Colors.black45,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            "${txn.isExpense ? '-' : '+'} ৳${txn.amount.toStringAsFixed(2)}",
+                            style: TextStyle(
+                              color: txn.isExpense ? Colors.red : Colors.green,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                          Text(
+                            "${txn.date.day}/${txn.date.month}/${txn.date.year}",
+                            style: TextStyle(
+                              color: isDark ? Colors.white38 : Colors.black38,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 );
               },
             );
           },
         ),
       ],
-    );
-  }
-}
-
-class _TransactionItem extends StatelessWidget {
-  final String title, subtitle, amount;
-  final bool isExpense;
-
-  const _TransactionItem({
-    required this.title,
-    required this.subtitle,
-    required this.amount,
-    required this.isExpense,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: isDark ? const Color(0xFF333348) : Colors.grey[300],
-        child: Icon(
-          isExpense ? Icons.arrow_upward : Icons.arrow_downward,
-          color: isExpense ? Colors.red : Colors.green,
-        ),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
-      ),
-      trailing: Text(
-        amount,
-        style: TextStyle(
-          color: isExpense ? Colors.red : Colors.green,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
     );
   }
 }

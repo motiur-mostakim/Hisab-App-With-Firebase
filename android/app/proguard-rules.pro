@@ -1,0 +1,7 @@
+-keep class com.dexterous.flutterlocalnotifications.** { *; }
+-keep class com.google.firebase.** { *; }
+-keep class com.example.hisab_app.** { *; }
+-keep class androidx.work.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.dexterous.flutterlocalnotifications.**

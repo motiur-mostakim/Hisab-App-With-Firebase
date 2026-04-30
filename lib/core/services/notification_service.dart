@@ -29,7 +29,7 @@ void notificationTapBackground(NotificationResponse details) async {
           playSound: true,
           sound: RawResourceAndroidNotificationSound('notification'),
           enableVibration: true,
-          fullScreenIntent: true,
+          fullScreenIntent: false,
           category: AndroidNotificationCategory.alarm,
           visibility: NotificationVisibility.public,
           actions: <AndroidNotificationAction>[
@@ -218,7 +218,7 @@ class NotificationService {
         playSound: true,
         sound: RawResourceAndroidNotificationSound(soundName),
         enableVibration: true,
-        fullScreenIntent: true,
+        fullScreenIntent: false,
         category: AndroidNotificationCategory.alarm,
         visibility: NotificationVisibility.public,
         actions: <AndroidNotificationAction>[

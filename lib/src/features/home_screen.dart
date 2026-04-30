@@ -26,7 +26,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadNotificationCount();
-    // FCMService().triggerInAppEvent('home_open');
   }
 
   double _getMonthlyExpense(List<TransactionModel> transactions) {
@@ -36,6 +35,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return transactions
         .where(
           (txn) =>
+              !txn.isLoan && // ধারের হিসাব বাজেটে আসবে না
               txn.isExpense &&
               txn.date.isAfter(monthStart) &&
               txn.date.isBefore(DateTime.now()),
@@ -358,7 +358,6 @@ class _BalanceSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -545,7 +544,15 @@ class _BottomSection extends StatelessWidget {
               );
             }
 
-            final transactions = snapshot.data!.take(5).toList();
+            // শুধু সাধারণ লেনদেন দেখাবে (ধার বাদে)
+            final transactions = snapshot.data!
+                .where((t) => !t.isLoan)
+                .take(5)
+                .toList();
+
+            if (transactions.isEmpty) {
+              return const Center(child: Text("সাম্প্রতিক কোনো আয়-ব্যয় নেই"));
+            }
 
             return ListView.builder(
               shrinkWrap: true,

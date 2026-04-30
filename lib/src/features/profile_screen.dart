@@ -1,11 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // SystemUiOverlayStyle এর জন্য
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hisab_app/main.dart';
 import 'package:hisab_app/src/features/edit_profile_screen.dart';
 import 'package:hisab_app/src/features/debt_history_screen.dart';
-import 'package:hisab_app/src/features/alarm_screen.dart';
+import 'package:hisab_app/src/features/history_screen.dart'; // ইতিহাস স্ক্রিন ইম্পোর্ট
 import '../../core/services/transaction_service.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -28,11 +28,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        // স্ট্যাটাস বারের আইকন কালার ঠিক করার জন্য
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark, // Android
-          statusBarBrightness: isDark ? Brightness.dark : Brightness.light, // iOS
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
         title: Text(
           "প্রোফাইল",
@@ -103,7 +102,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: const TextStyle(color: Colors.grey),
             ),
             const SizedBox(height: 24),
-            /// 🔥 MENU ITEMS
             _menuItem(
               Icons.person,
               "প্রোফাইল এডিট করুন",
@@ -125,12 +123,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             _menuItem(
-              Icons.alarm,
-              "অ্যালার্ম",
+              Icons.history, // অ্যালার্মের জায়গায় ইতিহাস
+              "ইতিহাস",
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const AlarmScreen(),
+                  builder: (context) => const HistoryScreen(),
                 ),
               ),
             ),
@@ -138,8 +136,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             _menuItem(Icons.payment, "মুদ্রা সেটিংস", trailing: "BDT"),
             _menuItem(Icons.lock, "নিরাপত্তা"),
             const SizedBox(height: 10),
-
-            /// 🔥 DARK MODE SWITCH
             ValueListenableBuilder<ThemeMode>(
               valueListenable: themeNotifier,
               builder: (_, mode, __) {
@@ -174,18 +170,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
             ),
             const SizedBox(height: 10),
-
-            /// 🔥 LOGOUT
             InkWell(
               onTap: () async {
                 try {
-                  // Sign out from Google to allow account selection next time
                   await GoogleSignIn().signOut();
-                  // Sign out from Firebase
                   await auth.signOut();
                 } catch (e) {
                   debugPrint("Error during sign out: $e");
-                  // Fallback: just sign out from Firebase
                   await auth.signOut();
                 }
               },

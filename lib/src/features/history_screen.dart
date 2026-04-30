@@ -105,7 +105,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   );
                 }
 
-                var dateFiltered = _getFilteredByDate(snapshot.data!);
+                // ধারের লেনদেনগুলো হিস্ট্রি থেকে বাদ দিতে চাইলে এখানে ফিল্টার করুন
+                var dateFiltered = _getFilteredByDate(
+                  snapshot.data!.where((txn) => !txn.isLoan).toList(),
+                );
 
                 if (_searchController.text.isNotEmpty) {
                   final query = _searchController.text.toLowerCase();

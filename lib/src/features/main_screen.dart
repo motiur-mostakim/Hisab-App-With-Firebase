@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:hisab_app/src/features/note_screen.dart';
 import 'package:hisab_app/src/features/profile_screen.dart';
 import 'package:hisab_app/src/features/report_screen.dart';
+import 'package:hisab_app/src/features/alarm_screen.dart';
 
-import 'history_screen.dart';
 import 'home_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -19,7 +19,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final screens = const [
     DashboardScreen(),
-    HistoryScreen(),
+    AlarmScreen(),
     NoteScreen(),
     ReportScreen(),
     ProfileScreen(),
@@ -113,7 +113,7 @@ class _MainScreenState extends State<MainScreen> {
               icon: Icon(Icons.dashboard),
               label: "ড্যাশবোর্ড",
             ),
-            BottomNavigationBarItem(icon: Icon(Icons.history), label: "ইতিহাস"),
+            BottomNavigationBarItem(icon: Icon(Icons.alarm), label: "অ্যালার্ম"),
             BottomNavigationBarItem(icon: Icon(Icons.note_alt), label: "নোট"),
             BottomNavigationBarItem(
               icon: Icon(Icons.bar_chart),

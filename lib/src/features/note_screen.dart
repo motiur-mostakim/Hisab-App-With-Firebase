@@ -409,35 +409,39 @@ class _NoteScreenState extends State<NoteScreen> {
                           ),
                           Row(
                             children: [
-                              IconButton(
-                                icon: const Icon(
+                              const SizedBox(height: 8),
+                              InkWell(
+                                child: const Icon(
                                   Icons.edit,
                                   color: Colors.blueAccent,
                                   size: 20,
                                 ),
-                                onPressed: () => _showNoteDialog(note: note),
+                                onTap: () => _showNoteDialog(note: note),
                               ),
-                              IconButton(
-                                icon: const Icon(
+                              SizedBox(width: 16,),
+                              InkWell(
+                                child: const Icon(
                                   Icons.delete,
                                   color: Colors.redAccent,
                                   size: 20,
                                 ),
-                                onPressed: () =>
+                                onTap: () =>
                                     _noteService.deleteNote(note.id),
                               ),
                             ],
                           ),
                         ],
                       ),
+                      if(note.content != null)
                       const SizedBox(height: 8),
+                      if(note.content != null)
                       Text(
                         note.content ?? "",
                         style: TextStyle(
                           color: isDark ? Colors.white70 : Colors.black54,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           Icon(

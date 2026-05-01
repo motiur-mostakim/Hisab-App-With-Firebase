@@ -8,6 +8,7 @@ import '../../core/services/FCM_services.dart';
 import '../../core/services/transaction_service.dart';
 import 'add_transaction_screen.dart';
 import 'calculator_screen.dart';
+import 'history_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -514,7 +515,12 @@ class _BottomSection extends StatelessWidget {
             ),
             TextButton(
               onPressed: () {
-                // Navigate to history
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HistoryScreen(),
+                  ),
+                );
               },
               child: const Text(
                 "সব দেখুন",
@@ -547,7 +553,7 @@ class _BottomSection extends StatelessWidget {
             // শুধু সাধারণ লেনদেন দেখাবে (ধার বাদে)
             final transactions = snapshot.data!
                 .where((t) => !t.isLoan)
-                .take(5)
+                .take(10)
                 .toList();
 
             if (transactions.isEmpty) {

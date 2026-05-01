@@ -2,26 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/widgets/auth_check.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const AuthCheck()),
-        );
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +15,6 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // অ্যাপ লোগো বা আইকন
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -47,7 +28,6 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            // অ্যাপের নাম
             Text(
               "হিসাব অ্যাপ",
               style: TextStyle(
@@ -66,9 +46,8 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 48),
-            // লোডিং ইন্ডিকেটর
             const SizedBox(
-              width: 40,
+              width: 120,
               child: LinearProgressIndicator(
                 backgroundColor: Colors.transparent,
                 valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF60DCB2)),

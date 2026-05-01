@@ -2,8 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:hisab_app/core/services/note_services_for_local_database.dart';
 import 'package:hisab_app/core/services/notification_service.dart';
-import 'package:hisab_app/src/features/splash_screen.dart'; // Import SplashScreen
-
+import 'package:hisab_app/core/widgets/auth_check.dart';
 import 'core/services/FCM_services.dart';
 import 'firebase_options.dart';
 
@@ -15,10 +14,10 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final notificationService = NotificationService();
-  await notificationService.initNotification();
-  await FCMService().init();
+  notificationService.initNotification();
+  FCMService().init();
   final notes = await NoteServicesForLocalDatabase().getNotes();
-  await notificationService.restoreAlarms(notes);
+  notificationService.restoreAlarms(notes);
   runApp(const MyApp());
 }
 
@@ -57,7 +56,7 @@ class MyApp extends StatelessWidget {
           ),
           themeMode: currentMode,
           navigatorKey: navigatorKey,
-          home: const SplashScreen(), // Set SplashScreen as initial route
+          home: const AuthCheck(), // Set SplashScreen as initial route
         );
       },
     );

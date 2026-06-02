@@ -15,7 +15,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final TextEditingController _searchController = TextEditingController();
 
-  String _filterType = "দৈনিক"; // দৈনিক, মাসিক, বার্ষিক, কাস্টম
+  String _filterType = "দৈনিক";
 
   @override
   void initState() {
@@ -32,15 +32,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final yearStart = DateTime(now.year, 1, 1);
 
     return transactions.where((txn) {
-      final txnDate = DateTime(txn.date.year, txn.date.month, txn.date.day);
+      final txnDate = DateTime(
+        txn.transactionDate.year,
+        txn.transactionDate.month,
+        txn.transactionDate.day,
+      );
 
       switch (_filterType) {
         case "দৈনিক":
           return txnDate == today;
         case "মাসিক":
-          return txn.date.isAfter(monthStart.subtract(const Duration(days: 1)));
+          return txn.transactionDate.isAfter(
+            monthStart.subtract(const Duration(days: 1)),
+          );
         case "বার্ষিক":
-          return txn.date.isAfter(yearStart.subtract(const Duration(days: 1)));
+          return txn.transactionDate.isAfter(
+            yearStart.subtract(const Duration(days: 1)),
+          );
         default:
           return true;
       }
@@ -52,7 +60,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   ) {
     final grouped = <String, List<TransactionModel>>{};
     for (var txn in transactions) {
-      final date = txn.date;
+      final date = txn.transactionDate;
       final today = DateTime.now();
       final yesterday = today.subtract(const Duration(days: 1));
       final todayDate = DateTime(today.year, today.month, today.day);
@@ -105,20 +113,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   );
                 }
 
-                // ধারের লেনদেনগুলো হিস্ট্রি থেকে বাদ দিতে চাইলে এখানে ফিল্টার করুন
                 var dateFiltered = _getFilteredByDate(
-                  snapshot.data!.where((txn) => !txn.isLoan).toList(),
+                  snapshot.data!
+                      .where((txn) => !txn.type.startsWith('loan'))
+                      .toList(),
                 );
 
                 if (_searchController.text.isNotEmpty) {
                   final query = _searchController.text.toLowerCase();
-                  dateFiltered = dateFiltered
-                      .where(
-                        (txn) =>
-                            txn.category.toLowerCase().contains(query) ||
-                            txn.note.toLowerCase().contains(query),
-                      )
-                      .toList();
+                  dateFiltered = dateFiltered.where((txn) {
+                    final cat = txn.category?.toLowerCase() ?? '';
+                    final note = txn.note?.toLowerCase() ?? '';
+                    return cat.contains(query) || note.contains(query);
+                  }).toList();
                 }
 
                 final grouped = _groupByDate(dateFiltered);
@@ -147,13 +154,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             ...grouped[date]!.map((txn) {
                               return _transactionItem(
                                 isDark,
-                                icon: _getCategoryIcon(txn.category),
-                                title: txn.category,
+                                icon: _getCategoryIcon(txn.category ?? ''),
+                                title: txn.category ?? 'লেনদেন',
                                 subtitle:
-                                    "${txn.date.hour}:${txn.date.minute.toString().padLeft(2, '0')} • ${txn.note}",
+                                    "${txn.transactionDate.hour}:${txn.transactionDate.minute.toString().padLeft(2, '0')} • ${txn.note ?? ''}",
                                 amount:
-                                    "${txn.isExpense ? '-' : '+'}\৳${txn.amount.toStringAsFixed(2)}",
-                                isExpense: txn.isExpense,
+                                    "${txn.type == 'expense' ? '-' : '+'}৳${txn.amount.toStringAsFixed(2)}",
+                                isExpense: txn.type == 'expense',
                               );
                             }).toList(),
                             const SizedBox(height: 24),

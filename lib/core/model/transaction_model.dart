@@ -4,23 +4,23 @@ class TransactionModel {
   final String id;
   final String userId;
   final double amount;
-  final String category;
-  final String note;
-  final bool isExpense;
-  final DateTime date;
+  final String type; // income, expense, loan_taken, loan_repaid, loan_given, loan_collected
+  final String? category; // Food, Rent, Transport, Medicine, Salary, Business, etc.
+  final String? personId; // For loan transactions (Rahim, Karim, Jamal, etc.)
+  final String? note;
+  final DateTime transactionDate;
   final DateTime createdAt;
-  final bool isLoan; // নতুন ফিল্ড
 
   TransactionModel({
     required this.id,
     required this.userId,
     required this.amount,
-    required this.category,
-    required this.note,
-    required this.isExpense,
-    required this.date,
+    required this.type,
+    this.category,
+    this.personId,
+    this.note,
+    required this.transactionDate,
     required this.createdAt,
-    this.isLoan = false, // ডিফল্টভাবে false
   });
 
   Map<String, dynamic> toMap() {
@@ -28,12 +28,12 @@ class TransactionModel {
       'id': id,
       'userId': userId,
       'amount': amount,
+      'type': type,
       'category': category,
+      'personId': personId,
       'note': note,
-      'isExpense': isExpense,
-      'date': Timestamp.fromDate(date),
+      'transactionDate': Timestamp.fromDate(transactionDate),
       'createdAt': Timestamp.fromDate(createdAt),
-      'isLoan': isLoan,
     };
   }
 
@@ -42,12 +42,12 @@ class TransactionModel {
       id: map['id'] ?? '',
       userId: map['userId'] ?? '',
       amount: (map['amount'] ?? 0).toDouble(),
-      category: map['category'] ?? '',
-      note: map['note'] ?? '',
-      isExpense: map['isExpense'] ?? true,
-      date: (map['date'] as Timestamp).toDate(),
+      type: map['type'] ?? 'expense',
+      category: map['category'],
+      personId: map['personId'],
+      note: map['note'],
+      transactionDate: (map['transactionDate'] as Timestamp).toDate(),
       createdAt: (map['createdAt'] as Timestamp).toDate(),
-      isLoan: map['isLoan'] ?? false,
     );
   }
 }

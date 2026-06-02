@@ -64,21 +64,19 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
           }
 
           final allDebts =
-              snapshot.data?.where((txn) => txn.isLoan).toList() ?? [];
+              snapshot.data?.where((txn) => txn.type.startsWith('loan')).toList() ?? [];
 
           if (allDebts.isEmpty) {
             return _buildEmptyState();
           }
-
-          // ১. নাম অনুযায়ী লেনদেন গ্রুপ করা
           final Map<String, List<TransactionModel>> personGrouped = {};
           final Map<String, double> personBalances = {};
           final Map<String, String> displayNameMap = {};
 
           for (var txn in allDebts) {
-            final rawName = txn.note.trim().isEmpty
-                ? "নামহীন"
-                : txn.note.trim();
+            final rawName = (txn.personId?.trim().isNotEmpty == true)
+                ? txn.personId!.trim()
+                : ((txn.note?.trim().isNotEmpty == true) ? txn.note!.trim() : 'নামহীন');
             final normalizedName = rawName.toLowerCase();
 
             if (!personGrouped.containsKey(normalizedName)) {
@@ -87,14 +85,17 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
               displayNameMap[normalizedName] = rawName;
             }
             personGrouped[normalizedName]!.add(txn);
-            personBalances[normalizedName] =
-                personBalances[normalizedName]! +
-                (txn.isExpense ? txn.amount : -txn.amount);
+             double delta = 0;
+            if (txn.type == 'loan_given') delta = txn.amount;
+            if (txn.type == 'loan_collected') delta = -txn.amount;
+            if (txn.type == 'loan_taken') delta = -txn.amount;
+            if (txn.type == 'loan_repaid') delta = txn.amount;
+
+            personBalances[normalizedName] = personBalances[normalizedName]! + delta;
           }
 
-          // ২. পাওনা ও দেনা আলাদা লিস্টে ভাগ করা
-          final List<_PersonDebtInfo> iWillGet = []; // পাওনা (আমি পাব)
-          final List<_PersonDebtInfo> iWillGive = []; // দেনা (আমি দেব)
+          final List<_PersonDebtInfo> iWillGet = [];
+          final List<_PersonDebtInfo> iWillGive = [];
 
           personBalances.forEach((normalizedName, balance) {
             if (balance.abs() >= 1.0) {
@@ -102,7 +103,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                 name: displayNameMap[normalizedName]!,
                 amount: balance.abs(),
                 transactions: personGrouped[normalizedName]!
-                  ..sort((a, b) => b.date.compareTo(a.date)),
+                  ..sort((a, b) => b.transactionDate.compareTo(a.transactionDate)),
               );
               if (balance > 0) {
                 iWillGet.add(info);
@@ -120,7 +121,6 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
 
           return Column(
             children: [
-              // সামারি কার্ড
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -326,42 +326,49 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
         ),
         children: info.transactions
             .map(
-              (t) => ListTile(
-                dense: true,
-                leading: Icon(
-                  t.isExpense ? Icons.arrow_upward : Icons.arrow_downward,
-                  color: t.isExpense ? Colors.green : Colors.red,
-                  size: 16,
-                ),
-                title: Text(
-                  t.isExpense ? "দিয়েছি / পরিশোধ" : "নিয়েছি / ফেরত",
-                  style: const TextStyle(fontSize: 13),
-                ),
-                subtitle: Text("${t.date.day}/${t.date.month}/${t.date.year}"),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "৳${t.amount.toStringAsFixed(0)}",
-                      style: TextStyle(
-                        color: t.isExpense ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+              (t) {
+                final bool iGave = (t.type == 'loan_given' || t.type == 'loan_repaid');
+                final leadingIcon = iGave ? Icons.arrow_upward : Icons.arrow_downward;
+                final leadingColor = iGave ? Colors.green : Colors.red;
+                final titleText = iGave ? "দিয়েছি / পরিশোধ" : "নিয়েছি / ফেরত";
+
+                return ListTile(
+                  dense: true,
+                  leading: Icon(
+                    leadingIcon,
+                    color: leadingColor,
+                    size: 16,
+                  ),
+                  title: Text(
+                    titleText,
+                    style: const TextStyle(fontSize: 13),
+                  ),
+                  subtitle: Text("${t.transactionDate.day}/${t.transactionDate.month}/${t.transactionDate.year}"),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "৳${t.amount.toStringAsFixed(0)}",
+                        style: TextStyle(
+                          color: leadingColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.delete_outline,
-                        color: Colors.redAccent,
-                        size: 20,
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.redAccent,
+                          size: 20,
+                        ),
+                        onPressed: () => _deleteTransaction(t),
+                        tooltip: "মুছে ফেলুন",
                       ),
-                      onPressed: () => _deleteTransaction(t),
-                      tooltip: "মুছে ফেলুন",
-                    ),
-                  ],
-                ),
-              ),
+                    ],
+                  ),
+                );
+              },
             )
             .toList(),
       ),

@@ -13,7 +13,7 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> {
   final TransactionService _transactionService = TransactionService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  String _reportType = "মাসিক"; // মাসিক or বার্ষিক
+  String _reportType = "মাসিক";
 
   Map<String, double> _getCategoryTotals(
     List<TransactionModel> transactions,
@@ -21,9 +21,10 @@ class _ReportScreenState extends State<ReportScreen> {
   ) {
     final categoryTotals = <String, double>{};
     for (var txn in transactions) {
-      if (txn.isExpense == isExpense) {
-        categoryTotals[txn.category] =
-            (categoryTotals[txn.category] ?? 0) + txn.amount;
+      final matchesType = (isExpense && txn.type == 'expense') || (!isExpense && txn.type == 'income');
+      if (matchesType) {
+        final cat = txn.category ?? 'অন্যান্য';
+        categoryTotals[cat] = (categoryTotals[cat] ?? 0) + txn.amount;
       }
     }
     return categoryTotals;
@@ -39,15 +40,13 @@ class _ReportScreenState extends State<ReportScreen> {
     if (_reportType == "মাসিক") {
       return transactions
           .where(
-            (txn) =>
-                txn.date.isAfter(monthStart.subtract(const Duration(days: 1))),
+            (txn) => txn.transactionDate.isAfter(monthStart.subtract(const Duration(days: 1))),
           )
           .toList();
     } else {
       return transactions
           .where(
-            (txn) =>
-                txn.date.isAfter(yearStart.subtract(const Duration(days: 1))),
+            (txn) => txn.transactionDate.isAfter(yearStart.subtract(const Duration(days: 1))),
           )
           .toList();
     }
@@ -119,9 +118,9 @@ class _ReportScreenState extends State<ReportScreen> {
   Map<String, double> _calculateStats(List<TransactionModel> transactions) {
     double income = 0, expense = 0;
     for (var txn in transactions) {
-      if (txn.isExpense) {
+      if (txn.type == 'expense') {
         expense += txn.amount;
-      } else {
+      } else if (txn.type == 'income') {
         income += txn.amount;
       }
     }

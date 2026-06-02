@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../model/transaction_model.dart';
+import 'dashboard_calculations.dart';
 
 class TransactionService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -12,12 +12,11 @@ class TransactionService {
   Future<void> addTransaction(TransactionModel transaction) async {
     final userId = transaction.userId;
     
-    // ধারের জন্য আলাদা কালেকশন নাম নির্ধারণ
     String collectionName;
-    if (transaction.isLoan) {
+    if (transaction.type.startsWith('loan')) {
       collectionName = 'loans';
     } else {
-      collectionName = transaction.isExpense ? 'expenses' : 'income';
+      collectionName = transaction.type == 'expense' ? 'expenses' : 'income';
     }
 
     final batch = _firestore.batch();
@@ -43,10 +42,10 @@ class TransactionService {
     final userId = transaction.userId;
     
     String collectionName;
-    if (transaction.isLoan) {
+    if (transaction.type.startsWith('loan')) {
       collectionName = 'loans';
     } else {
-      collectionName = transaction.isExpense ? 'expenses' : 'income';
+      collectionName = transaction.type == 'expense' ? 'expenses' : 'income';
     }
 
     final batch = _firestore.batch();
@@ -76,7 +75,7 @@ class TransactionService {
         .collection('users')
         .doc(userId)
         .collection('all_transactions')
-        .orderBy('date', descending: true)
+        .orderBy('transactionDate', descending: true)
         .snapshots()
         .map(
           (snapshot) => snapshot.docs
@@ -85,7 +84,6 @@ class TransactionService {
         );
   }
 
-  // এই মেথডটি এখন শুধু সাধারণ আয়-ব্যয় রিটার্ন করবে (ধার বাদে)
   Stream<Map<String, double>> getDailyStats() {
     final userId = _auth.currentUser?.uid;
     if (userId == null) return Stream.value({'income': 0.0, 'expense': 0.0});
@@ -101,18 +99,63 @@ class TransactionService {
 
           for (var doc in snapshot.docs) {
             final txn = TransactionModel.fromMap(doc.data());
-            
-            // যদি ধার না হয়, তবেই মেইন ব্যালেন্সে যোগ হবে
-            if (!txn.isLoan) {
-              if (txn.isExpense) {
-                expense += txn.amount;
-              } else {
-                income += txn.amount;
-              }
+
+            if (txn.type == 'expense') {
+              expense += txn.amount;
+            } else if (txn.type == 'income') {
+              income += txn.amount;
             }
           }
 
           return {'income': income, 'expense': expense};
+        });
+  }
+
+  Stream<Map<String, dynamic>> getDashboardData() {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) {
+      return Stream.value({
+        'cashBalance': 0.0,
+        'debt': 0.0,
+        'receivable': 0.0,
+        'netWorth': 0.0,
+        'totalIncome': 0.0,
+        'totalExpense': 0.0,
+        'personLoans': <String, double>{},
+        'expenseByCategory': <String, double>{},
+        'incomeByCategory': <String, double>{},
+      });
+    }
+
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('all_transactions')
+        .snapshots()
+        .map((snapshot) {
+          final transactions = snapshot.docs
+              .map((doc) => TransactionModel.fromMap(doc.data()))
+              .toList();
+
+          return {
+            'cashBalance':
+                DashboardCalculations.calculateCashBalance(transactions),
+            'debt': DashboardCalculations.calculateOutstandingDebt(transactions),
+            'receivable':
+                DashboardCalculations.calculateReceivable(transactions),
+            'netWorth': DashboardCalculations.calculateNetWorth(transactions),
+            'totalIncome': DashboardCalculations.getTotalIncome(transactions),
+            'totalExpense':
+                DashboardCalculations.getTotalExpense(transactions),
+            'personLoans':
+                DashboardCalculations.getPersonLoanBalance(transactions),
+            'expenseByCategory':
+                DashboardCalculations.getExpenseByCategory(transactions),
+            'incomeByCategory':
+                DashboardCalculations.getIncomeByCategory(transactions),
+            'monthlySummary':
+                DashboardCalculations.getMonthlySummary(transactions),
+          };
         });
   }
 }

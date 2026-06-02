@@ -21,7 +21,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   late bool isExpense;
   Map<String, dynamic>? selectedCategory;
   File? receiptFile;
-  bool isLoan = false; // ধারের জন্য নতুন স্টেট
+  bool isLoan = false;
 
   final TextEditingController amountController = TextEditingController();
   final TextEditingController noteController = TextEditingController();
@@ -68,7 +68,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   Future<void> _saveTransaction() async {
     final amount = double.tryParse(amountController.text);
-    final category = selectedCategory?['name'] ?? 'অন্যান্য';
+    final category = selectedCategory?['name'];
     final userId = _auth.currentUser?.uid;
 
     if (amount == null || amount <= 0) {
@@ -88,16 +88,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     try {
       final transactionId = const Uuid().v4();
 
+      String type;
+      if (isLoan) {
+        type = isExpense ? 'loan_given' : 'loan_taken';
+      } else {
+        type = isExpense ? 'expense' : 'income';
+      }
+
       final transaction = TransactionModel(
         id: transactionId,
         userId: userId,
         amount: amount,
+        type: type,
         category: category,
-        note: noteController.text,
-        isExpense: isExpense,
-        date: selectedDate,
+        personId: isLoan ? noteController.text : null,
+        note: isLoan ? null : noteController.text,
+        transactionDate: selectedDate,
         createdAt: DateTime.now(),
-        isLoan: isLoan, // ধার কি না তা সেভ করা
       );
 
       await _transactionService.addTransaction(transaction);
@@ -181,8 +188,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // 🔥 ধারের সুইচ
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
@@ -370,7 +375,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       onTap: () {
         setState(() {
           isExpense = value;
-          isLoan = false; // মোড চেঞ্জ করলে লোন রিসেট
+          isLoan = false;
         });
       },
       child: Container(

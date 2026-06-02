@@ -2,9 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hisab_app/core/services/fcm_notification_services.dart';
 import 'package:hisab_app/src/features/notification_screen.dart';
+import 'package:hisab_app/src/features/widgets/dashboard_summary_widget.dart';
 
 import '../../core/model/transaction_model.dart';
-import '../../core/services/FCM_services.dart';
 import '../../core/services/transaction_service.dart';
 import 'add_transaction_screen.dart';
 import 'calculator_screen.dart';
@@ -36,10 +36,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return transactions
         .where(
           (txn) =>
-              !txn.isLoan && // ধারের হিসাব বাজেটে আসবে না
-              txn.isExpense &&
-              txn.date.isAfter(monthStart) &&
-              txn.date.isBefore(DateTime.now()),
+              txn.type == 'expense' &&
+              txn.transactionDate.isAfter(monthStart) &&
+              txn.transactionDate.isBefore(DateTime.now()),
         )
         .fold(0.0, (sum, txn) => sum + txn.amount);
   }
@@ -120,6 +119,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
+            DashboardSummaryWidget(transactionService: _transactionService),
+            const SizedBox(height: 20),
+
             Row(
               children: [
                 Expanded(
@@ -141,21 +143,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-
-            StreamBuilder<Map<String, double>>(
-              stream: _transactionService.getDailyStats(),
-              builder: (context, snapshot) {
-                final stats = snapshot.data ?? {'income': 0.0, 'expense': 0.0};
-                final balance =
-                    (stats['income'] ?? 0.0) - (stats['expense'] ?? 0.0);
-
-                return _BalanceSection(balance: balance);
-              },
-            ),
-            const SizedBox(height: 20),
-            _SummaryCards(transactionService: _transactionService),
-            const SizedBox(height: 20),
+            const SizedBox(height: 4),
             StreamBuilder<List<TransactionModel>>(
               stream: _transactionService.getTransactions(),
               builder: (context, snapshot) {
@@ -292,7 +280,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 );
               },
             ),
-
             const SizedBox(height: 20),
             _BottomSection(transactionService: _transactionService),
           ],
@@ -353,148 +340,6 @@ class _ActionBtn extends StatelessWidget {
   }
 }
 
-class _BalanceSection extends StatelessWidget {
-  final double balance;
-  const _BalanceSection({required this.balance});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF60DCB2), Color(0xFF45B08C)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF60DCB2).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          const Text(
-            "মোট ব্যালেন্স",
-            style: TextStyle(
-              color: Color(0xFF003829),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            "৳${balance.toStringAsFixed(2)}",
-            style: const TextStyle(
-              color: Color(0xFF003829),
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryCards extends StatelessWidget {
-  final TransactionService transactionService;
-  const _SummaryCards({required this.transactionService});
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<Map<String, double>>(
-      stream: transactionService.getDailyStats(),
-      builder: (context, snapshot) {
-        final stats = snapshot.data ?? {'income': 0.0, 'expense': 0.0};
-        return Row(
-          children: [
-            Expanded(
-              child: _SummaryCard(
-                title: "আয়",
-                amount: stats['income'] ?? 0.0,
-                icon: Icons.arrow_upward,
-                color: Colors.green,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _SummaryCard(
-                title: "ব্যয়",
-                amount: stats['expense'] ?? 0.0,
-                icon: Icons.arrow_downward,
-                color: Colors.red,
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  final String title;
-  final double amount;
-  final IconData icon;
-  final Color color;
-
-  const _SummaryCard({
-    required this.title,
-    required this.amount,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E32) : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isDark ? Colors.white10 : Colors.grey.shade200,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: TextStyle(
-              color: isDark ? Colors.white70 : Colors.black54,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "৳${amount.toStringAsFixed(2)}",
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _BottomSection extends StatelessWidget {
   final TransactionService transactionService;
@@ -550,9 +395,10 @@ class _BottomSection extends StatelessWidget {
               );
             }
 
-            // শুধু সাধারণ লেনদেন দেখাবে (ধার বাদে)
             final transactions = snapshot.data!
-                .where((t) => !t.isLoan)
+                .where((t) =>
+                    t.type == 'income' || t.type == 'expense'
+                )
                 .take(10)
                 .toList();
 
@@ -581,13 +427,13 @@ class _BottomSection extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: (txn.isExpense ? Colors.red : Colors.green)
+                          color: (txn.type == 'expense' ? Colors.red : Colors.green)
                               .withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
-                          txn.isExpense ? Icons.remove : Icons.add,
-                          color: txn.isExpense ? Colors.red : Colors.green,
+                          txn.type == 'expense' ? Icons.remove : Icons.add,
+                          color: txn.type == 'expense' ? Colors.red : Colors.green,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -596,14 +442,14 @@ class _BottomSection extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              txn.category,
+                              txn.category ?? "লেনদেন",
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
                             ),
                             Text(
-                              txn.note,
+                              txn.note ?? "",
                               style: TextStyle(
                                 color: isDark ? Colors.white54 : Colors.black45,
                                 fontSize: 13,
@@ -616,15 +462,15 @@ class _BottomSection extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            "${txn.isExpense ? '-' : '+'} ৳${txn.amount.toStringAsFixed(2)}",
+                            "${txn.type == 'expense' ? '-' : '+'} ৳${txn.amount.toStringAsFixed(2)}",
                             style: TextStyle(
-                              color: txn.isExpense ? Colors.red : Colors.green,
+                              color: txn.type == 'expense' ? Colors.red : Colors.green,
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
                             ),
                           ),
                           Text(
-                            "${txn.date.day}/${txn.date.month}/${txn.date.year}",
+                            "${txn.transactionDate.day}/${txn.transactionDate.month}/${txn.transactionDate.year}",
                             style: TextStyle(
                               color: isDark ? Colors.white38 : Colors.black38,
                               fontSize: 12,

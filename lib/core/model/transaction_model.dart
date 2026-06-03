@@ -4,9 +4,9 @@ class TransactionModel {
   final String id;
   final String userId;
   final double amount;
-  final String type; // income, expense, loan_taken, loan_repaid, loan_given, loan_collected
-  final String? category; // Food, Rent, Transport, Medicine, Salary, Business, etc.
-  final String? personId; // For loan transactions (Rahim, Karim, Jamal, etc.)
+  final String type;
+  final String? category;
+  final String? personId;
   final String? note;
   final DateTime transactionDate;
   final DateTime createdAt;

@@ -20,7 +20,6 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final FirebaseAuth auth = FirebaseAuth.instance;
   final TransactionService _transactionService = TransactionService();
-  final double monthlyBudget = 3500.0;
   int _notificationCount = 0;
 
   @override
@@ -38,7 +37,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           (txn) =>
               txn.type == 'expense' &&
               txn.transactionDate.isAfter(monthStart) &&
-              txn.transactionDate.isBefore(DateTime.now()),
+              txn.transactionDate.isBefore(DateTime.now().add(const Duration(days: 1))),
         )
         .fold(0.0, (sum, txn) => sum + txn.amount);
   }
@@ -59,6 +58,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: AddTransactionScreen(initialIsExpense: isExpense),
           ),
         ),
+      ),
+    );
+  }
+
+  // বাজেট সেট করার ডায়ালগ
+  void _showSetBudgetDialog(double currentBudget) {
+    final controller = TextEditingController(text: currentBudget == 0 ? "" : currentBudget.toString());
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("মাসিক বাজেট সেট করুন"),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: "বাজেট পরিমাণ",
+            hintText: "উদাঃ ৫০০০",
+            prefixText: "৳ ",
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("বাতিল"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final budget = double.tryParse(controller.text) ?? 0.0;
+              _transactionService.updateBudget(budget);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("বাজেট আপডেট করা হয়েছে")),
+              );
+            },
+            child: const Text("সেভ করুন"),
+          ),
+        ],
       ),
     );
   }
@@ -110,7 +146,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 );
                 _loadNotificationCount();
               },
-              icon: const Icon(Icons.notifications_none),
+              icon: Stack(
+                children: [
+                  const Icon(Icons.notifications_none),
+                  if (_notificationCount > 0)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 12,
+                          minHeight: 12,
+                        ),
+                        child: Text(
+                          '$_notificationCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 8,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ],
@@ -144,141 +208,168 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             const SizedBox(height: 4),
-            StreamBuilder<List<TransactionModel>>(
-              stream: _transactionService.getTransactions(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const SizedBox.shrink();
-                }
-                final monthlyExpense = _getMonthlyExpense(snapshot.data!);
-                final isOverBudget = monthlyExpense > monthlyBudget;
-                final percentageUsed = (monthlyExpense / monthlyBudget) * 100;
-                return Column(
-                  children: [
-                    if (isOverBudget)
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.red.withOpacity(0.5),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.warning_rounded,
-                              color: Colors.red,
-                              size: 28,
+            
+            // ডাইনামিক বাজেট সেকশন
+            StreamBuilder<double>(
+              stream: _transactionService.getBudget(),
+              builder: (context, budgetSnapshot) {
+                final monthlyBudget = budgetSnapshot.data ?? 0.0;
+                
+                return StreamBuilder<List<TransactionModel>>(
+                  stream: _transactionService.getTransactions(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const SizedBox.shrink();
+                    }
+                    final monthlyExpense = _getMonthlyExpense(snapshot.data!);
+                    final isOverBudget = monthlyBudget > 0 && monthlyExpense > monthlyBudget;
+                    final percentageUsed = monthlyBudget > 0 
+                        ? (monthlyExpense / monthlyBudget) * 100 
+                        : 0.0;
+                    
+                    return Column(
+                      children: [
+                        if (isOverBudget)
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            margin: const EdgeInsets.only(top: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.red.withOpacity(0.5),
+                                width: 1.5,
+                              ),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    "বাজেট অতিক্রম করেছেন!",
-                                    style: TextStyle(
-                                      color: Colors.red,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.warning_rounded,
+                                  color: Colors.red,
+                                  size: 28,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "বাজেট অতিক্রম করেছেন!",
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        "৳${(monthlyExpense - monthlyBudget).toStringAsFixed(2)} অতিরিক্ত খরচ করেছেন",
+                                        style: const TextStyle(
+                                          color: Colors.red,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: () => _showSetBudgetDialog(monthlyBudget),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF1E1E32)
+                                  : Colors.grey[200],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          "মাসিক বাজেট",
+                                          style: TextStyle(
+                                            color: isDark
+                                                ? Colors.white70
+                                                : Colors.black54,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Icon(
+                                          Icons.edit,
+                                          size: 14,
+                                          color: isDark ? Colors.white54 : Colors.black45,
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      monthlyBudget > 0 
+                                          ? "${percentageUsed.toStringAsFixed(0)}% ব্যবহৃত"
+                                          : "বাজেট সেট নেই",
+                                      style: TextStyle(
+                                        color: isOverBudget
+                                            ? Colors.red
+                                            : (monthlyBudget > 0 ? Colors.green : Colors.grey),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: LinearProgressIndicator(
+                                    value: monthlyBudget > 0 
+                                        ? (monthlyExpense / monthlyBudget).clamp(0.0, 1.0)
+                                        : 0.0,
+                                    minHeight: 8,
+                                    backgroundColor: Colors.grey.withOpacity(0.3),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      isOverBudget ? Colors.red : Colors.green,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "৳${(monthlyExpense - monthlyBudget).toStringAsFixed(2)} অতিরিক্ত খরচ করেছেন",
-                                    style: const TextStyle(
-                                      color: Colors.red,
-                                      fontSize: 12,
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      "৳${monthlyExpense.toStringAsFixed(2)}",
+                                      style: TextStyle(
+                                        color: isDark ? Colors.white : Colors.black87,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
+                                    Text(
+                                      "সীমা: ৳${monthlyBudget.toStringAsFixed(2)}",
+                                      style: TextStyle(
+                                        color: isDark
+                                            ? Colors.white54
+                                            : Colors.black45,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    const SizedBox(height: 16),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color(0xFF1E1E32)
-                            : Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "মাসিক বাজেট",
-                                style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white70
-                                      : Colors.black54,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Text(
-                                "${percentageUsed.toStringAsFixed(0)}% ব্যবহৃত",
-                                style: TextStyle(
-                                  color: isOverBudget
-                                      ? Colors.red
-                                      : Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: LinearProgressIndicator(
-                              value: (monthlyExpense / monthlyBudget).clamp(
-                                0.0,
-                                1.0,
-                              ),
-                              minHeight: 8,
-                              backgroundColor: Colors.grey.withOpacity(0.3),
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                isOverBudget ? Colors.red : Colors.green,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "৳${monthlyExpense.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  color: isDark ? Colors.white : Colors.black87,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                "সীমা: ৳${monthlyBudget.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  color: isDark
-                                      ? Colors.white54
-                                      : Colors.black45,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                      ],
+                    );
+                  },
                 );
-              },
+              }
             ),
             const SizedBox(height: 20),
             _BottomSection(transactionService: _transactionService),
@@ -340,7 +431,6 @@ class _ActionBtn extends StatelessWidget {
   }
 }
 
-
 class _BottomSection extends StatelessWidget {
   final TransactionService transactionService;
   const _BottomSection({required this.transactionService});
@@ -396,9 +486,7 @@ class _BottomSection extends StatelessWidget {
             }
 
             final transactions = snapshot.data!
-                .where((t) =>
-                    t.type == 'income' || t.type == 'expense'
-                )
+                .where((t) => t.type == 'income' || t.type == 'expense')
                 .take(10)
                 .toList();
 
@@ -442,41 +530,31 @@ class _BottomSection extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              txn.category ?? "লেনদেন",
+                              txn.category ?? "অন্যান্য",
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
                             ),
                             Text(
-                              txn.note ?? "",
+                              txn.note!.isEmpty ? (txn.type == 'expense' ? "ব্যয়" : "আয়") : txn.note ?? "",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                color: isDark ? Colors.white54 : Colors.black45,
-                                fontSize: 13,
+                                color: isDark ? Colors.white54 : Colors.black54,
+                                fontSize: 12,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            "${txn.type == 'expense' ? '-' : '+'} ৳${txn.amount.toStringAsFixed(2)}",
-                            style: TextStyle(
-                              color: txn.type == 'expense' ? Colors.red : Colors.green,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            "${txn.transactionDate.day}/${txn.transactionDate.month}/${txn.transactionDate.year}",
-                            style: TextStyle(
-                              color: isDark ? Colors.white38 : Colors.black38,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        "${txn.type == 'expense' ? '-' : '+'} ৳${txn.amount.toStringAsFixed(0)}",
+                        style: TextStyle(
+                          color: txn.type == 'expense' ? Colors.red : Colors.green,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ],
                   ),

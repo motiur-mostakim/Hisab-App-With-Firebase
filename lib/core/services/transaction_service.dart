@@ -158,4 +158,29 @@ class TransactionService {
           };
         });
   }
+
+  Future<void> updateBudget(double budget) async {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) return;
+
+    await _firestore.collection('users').doc(userId).set({
+      'monthlyBudget': budget,
+    }, SetOptions(merge: true));
+  }
+
+  Stream<double> getBudget() {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) return Stream.value(0.0);
+
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .snapshots()
+        .map((doc) {
+          if (doc.exists && doc.data() != null) {
+            return (doc.data()!['monthlyBudget'] ?? 0.0).toDouble();
+          }
+          return 0.0;
+        });
+  }
 }

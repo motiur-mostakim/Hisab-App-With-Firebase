@@ -108,13 +108,10 @@ class NotificationService {
   Future<void> restoreAlarms(List<NoteModel> notes) async {
     for (var note in notes) {
       if (note.alarmTime != null) {
-        /// clear old
         await cancelNotification(note.id.hashCode);
         for (int i = 1; i <= 7; i++) {
           await cancelNotification(note.id.hashCode + i);
         }
-
-        /// single alarm
         if (note.repeatDays == null || note.repeatDays!.isEmpty) {
           if (note.alarmTime!.isAfter(DateTime.now())) {
             await scheduleNotification(
@@ -125,7 +122,6 @@ class NotificationService {
             );
           }
         } else {
-          /// repeat alarm
           await scheduleWeeklyNotifications(
             note.id.hashCode,
             "নোট: ${note.title}",
@@ -145,7 +141,6 @@ class NotificationService {
     DateTime scheduledDate,
       {String soundName = 'notification',}
   ) async {
-    // local DateTime থেকে TZDateTime এ রূপান্তর (সঠিক মুহূর্ত নিশ্চিত করতে)
     tz.TZDateTime tzScheduledDate = scheduledDate is tz.TZDateTime
         ? scheduledDate
         : tz.TZDateTime.from(scheduledDate, tz.local);

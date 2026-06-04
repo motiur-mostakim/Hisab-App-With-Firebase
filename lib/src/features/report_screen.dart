@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
+import 'dart:convert' show utf8;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../core/model/transaction_model.dart';
+import '../../core/services/savepdf.dart';
 import '../../core/services/transaction_service.dart';
 import '../../core/services/dashboard_calculations.dart';
+import '../../core/services/report_generator_service.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -14,10 +21,166 @@ class ReportScreen extends StatefulWidget {
 class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClientMixin {
   final TransactionService _transactionService = TransactionService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final ReportGeneratorService _reportGenerator = ReportGeneratorService();
   String _reportType = "মাসিক";
+  bool _isGeneratingPdf = false;
 
   @override
   bool get wantKeepAlive => true;
+
+  // PDF ডাউনলোড এবং ফাইল সেভ করার method
+  Future<void> _downloadPdfReport(
+      List<TransactionModel> transactions,
+      ) async {
+    try {
+      setState(() => _isGeneratingPdf = true);
+
+      final filteredTransactions = _filterByReportType(transactions);
+
+      final stats = _calculateStats(filteredTransactions);
+
+      final categoryTotals =
+      _getCategoryTotals(filteredTransactions, true);
+
+      final pdfFile = await _reportGenerator.generatePdfReport(
+        transactions: filteredTransactions,
+        reportType: _reportType,
+        totalIncome: stats['income']!,
+        totalExpense: stats['expense']!,
+        netWorth: stats['balance']!,
+        categoryTotals: categoryTotals,
+      );
+
+      final downloadsDir = Directory('/storage/emulated/0/Download');
+
+      if (!await downloadsDir.exists()) {
+        await downloadsDir.create(recursive: true);
+      }
+
+      final fileName =
+          'Hisab_Report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+
+      final finalPath =
+      uniqueFilePath(downloadsDir.path, fileName);
+
+      final newFile = await pdfFile.copy(finalPath);
+
+      setState(() => _isGeneratingPdf = false);
+
+      if (mounted) {
+        _showSnackbar('PDF Downloads folder এ save হয়েছে');
+
+        print("Saved Path => ${newFile.path}");
+      }
+    } catch (e) {
+      setState(() => _isGeneratingPdf = false);
+      _showSnackbar('Error: $e');
+    }
+  }
+
+  // File manager এ ফাইল খোলার method
+  Future<void> _openFileManager(String filePath) async {
+    try {
+      // Android এর জন্য Intent ব্যবহার করুন
+      if (Platform.isAndroid) {
+        // File manager খুলতে share ব্যবহার করি
+        await Share.shareXFiles(
+          [XFile(filePath)],
+          text: 'আর্থিক রিপোর্ট ডাউনলোড হয়েছে',
+        );
+      }
+    } catch (e) {
+      print('File manager খোলার error: $e');
+    }
+  }
+
+  // Email এ রিপোর্ট পাঠানোর method
+  Future<void> _sendReportViaEmail(List<TransactionModel> transactions) async {
+    try {
+      setState(() => _isGeneratingPdf = true);
+
+      final filteredTransactions = _filterByReportType(transactions);
+      final stats = _calculateStats(filteredTransactions);
+      final categoryTotals = _getCategoryTotals(filteredTransactions, true);
+
+      // PDF generate করুন
+      final file = await _reportGenerator.generatePdfReport(
+        transactions: filteredTransactions,
+        reportType: _reportType,
+        totalIncome: stats['income']!,
+        totalExpense: stats['expense']!,
+        netWorth: stats['balance']!,
+        categoryTotals: categoryTotals,
+      );
+
+      setState(() => _isGeneratingPdf = false);
+
+      if (mounted) {
+        // Share sheet ব্যবহার করে email এ পাঠান
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: 'আমার আর্থিক রিপোর্ট ($_reportType)',
+        );
+        _showSnackbar('রিপোর্ট শেয়ার করার জন্য প্রস্তুত');
+      }
+    } catch (e) {
+      setState(() => _isGeneratingPdf = false);
+      _showSnackbar('Email পাঠাতে error: $e');
+    }
+  }
+
+  // CSV তে export করার method
+  Future<void> _exportCsvReport(List<TransactionModel> transactions) async {
+    try {
+      setState(() => _isGeneratingPdf = true);
+
+      final filteredTransactions = _filterByReportType(transactions);
+
+      // CSV content তৈরি করুন
+      String csvContent = 'তারিখ,বিভাগ,বিবরণ,ধরন,পরিমাণ\n';
+
+      for (var txn in filteredTransactions) {
+        final date = '${txn.transactionDate.year}-${txn.transactionDate.month.toString().padLeft(2, '0')}-${txn.transactionDate.day.toString().padLeft(2, '0')}';
+        final category = txn.category ?? 'অন্যান্য';
+        final type = txn.type == 'income' ? 'আয়' : 'ব্যয়';
+        final note = txn.note ?? 'No description';
+        csvContent += '$date,$category,$note,$type,${txn.amount}\n';
+      }
+
+      // File save করুন
+      final directory = await getDownloadsDirectory() ?? await getTemporaryDirectory();
+      final fileName = 'Hisab_Report_${DateTime.now().millisecondsSinceEpoch}.csv';
+      final file = File('${directory.path}/$fileName');
+      await file.writeAsString(csvContent, encoding: utf8);
+      print("Directory: ${directory.path}");
+      setState(() => _isGeneratingPdf = false);
+
+      if (mounted) {
+        _showSnackbar('CSV রিপোর্ট ডাউনলোড হয়েছে: ${file.path}');
+        // Share করুন
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: 'আর্থিক রিপোর্ট (CSV)',
+        );
+      }
+    } catch (e) {
+      setState(() => _isGeneratingPdf = false);
+      _showSnackbar('CSV export এ error: $e');
+    }
+  }
+
+  void _showSnackbar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFF60DCB2),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
 
   Map<String, double> _getCategoryTotals(
     List<TransactionModel> transactions,
@@ -103,7 +266,7 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
                         const SizedBox(height: 20),
                         _buildTopCategories(categoryTotals, isDark),
                         const SizedBox(height: 20),
-                        _buildExportOptions(isDark),
+                        _buildExportOptions(allTransactions, isDark),
                         const SizedBox(height: 100),
                       ],
                     ),
@@ -381,7 +544,7 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
   Map<String, Map<String, double>> _getMonthlyHistory(List<TransactionModel> transactions) {
     final Map<String, Map<String, double>> history = {};
     final now = DateTime.now();
-    
+
     // Initialize last 6 months
     for (int i = 5; i >= 0; i--) {
       final date = DateTime(now.year, now.month - i, 1);
@@ -468,18 +631,30 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
     );
   }
 
-  Widget _buildExportOptions(bool isDark) {
+  Widget _buildExportOptions(List<TransactionModel> transactions, bool isDark) {
     return Column(
       children: [
-        _exportTile(Icons.picture_as_pdf, "PDF রিপোর্ট ডাউনলোড", isDark, () {
-          _showActionSnackbar("PDF ডাউনলোড শুরু হচ্ছে...");
-        }),
-        _exportTile(Icons.table_chart, "CSV রিপোর্ট ডাউনলোড", isDark, () {
-          _showActionSnackbar("CSV ডাউনলোড শুরু হচ্ছে...");
-        }),
-        _exportTile(Icons.mail, "ইমেইল রিপোর্ট পাঠান", isDark, () {
-          _showActionSnackbar("ইমেইল পাঠানো হচ্ছে...");
-        }),
+        _exportTile(
+          Icons.picture_as_pdf,
+          "PDF রিপোর্ট ডাউনলোড",
+          isDark,
+          _isGeneratingPdf,
+          () => _downloadPdfReport(transactions),
+        ),
+        _exportTile(
+          Icons.table_chart,
+          "CSV রিপোর্ট ডাউনলোড",
+          isDark,
+          _isGeneratingPdf,
+          () => _exportCsvReport(transactions),
+        ),
+        _exportTile(
+          Icons.mail,
+          "ইমেইল রিপোর্ট পাঠান",
+          isDark,
+          _isGeneratingPdf,
+          () => _sendReportViaEmail(transactions),
+        ),
       ],
     );
   }
@@ -494,28 +669,44 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
     );
   }
 
-  Widget _exportTile(IconData icon, String title, bool isDark, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: const Color(0xFF60DCB2)),
-            const SizedBox(width: 10),
-            Text(
-              title,
-              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-            ),
-            const Spacer(),
-            const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
-          ],
+  Widget _exportTile(
+    IconData icon,
+    String title,
+    bool isDark,
+    bool isLoading,
+    VoidCallback onTap,
+  ) {
+    return Opacity(
+      opacity: isLoading ? 0.6 : 1.0,
+      child: InkWell(
+        onTap: isLoading ? null : onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: const Color(0xFF60DCB2)),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              ),
+              const Spacer(),
+              if (isLoading)
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
+            ],
+          ),
         ),
       ),
     );

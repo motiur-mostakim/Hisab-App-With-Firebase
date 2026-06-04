@@ -36,7 +36,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     {"icon": Icons.restaurant, "name": "খাবার"},
     {"icon": Icons.shopping_bag, "name": "কেনাকাটা"},
     {"icon": Icons.directions_car, "name": "পরিবহন"},
-    {"icon": Icons.movie, "name": "বিনোদন"},
+    {"icon": Icons.payments, "name": "বেতন"},
     {"icon": Icons.health_and_safety, "name": "স্বাস্থ্য"},
     {"icon": Icons.more_horiz, "name": "অন্যান্য"},
   ];

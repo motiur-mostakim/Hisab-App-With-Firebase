@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hisab_app/src/features/registration_screen.dart';
 
+import 'main_screen.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -50,6 +52,10 @@ class _LoginScreenState extends State<LoginScreen> {
             content: Text('Successfully signed in'),
             backgroundColor: Color(0xFF60DCB2),
           ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
         );
       }
     } catch (e) {

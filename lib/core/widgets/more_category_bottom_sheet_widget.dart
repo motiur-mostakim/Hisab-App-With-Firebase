@@ -7,19 +7,18 @@ class CategoriesBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF1A1A2E) : Colors.white;
-    final primaryTextColor = isDark ? Colors.white : Colors.black87;
-    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
-    final fieldColor = isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200];
-    final handleColor = isDark ? Colors.white24 : Colors.grey[400];
-    final itemBgColor = isDark ? Colors.white.withOpacity(0.1) : Colors.grey[100];
-    final iconColor = isDark ? Colors.white : Colors.black54;
+    // Strictly Black and White Theme
+    const backgroundColor = Colors.black;
+    const primaryTextColor = Colors.white;
+    const secondaryTextColor = Colors.white70;
+    const handleColor = Colors.white24;
+    final searchFillColor = Colors.white.withOpacity(0.1);
+    final itemBgColor = Colors.white.withOpacity(0.1);
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: backgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
         children: [
@@ -37,7 +36,7 @@ class CategoriesBottomSheet extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                Text(
+                const Text(
                   "অন্যান্য বিভাগ",
                   style: TextStyle(
                     fontSize: 20,
@@ -48,7 +47,7 @@ class CategoriesBottomSheet extends StatelessWidget {
                 const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: Icon(Icons.close, color: secondaryTextColor),
+                  icon: const Icon(Icons.close, color: secondaryTextColor),
                 ),
               ],
             ),
@@ -56,12 +55,12 @@ class CategoriesBottomSheet extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
-              style: TextStyle(color: primaryTextColor),
+              style: const TextStyle(color: primaryTextColor),
               decoration: InputDecoration(
                 hintText: "বিভাগ খুঁজুন...",
                 hintStyle: const TextStyle(color: Colors.grey),
                 filled: true,
-                fillColor: fieldColor,
+                fillColor: searchFillColor,
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(20),
@@ -77,22 +76,62 @@ class CategoriesBottomSheet extends StatelessWidget {
               crossAxisSpacing: 10,
               mainAxisSpacing: 20,
               children: [
-                _item(Icons.card_giftcard, "উপহার", itemBgColor!, iconColor, primaryTextColor),
-                _item(Icons.movie, "বিনোদন", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.medical_services, "স্বাস্থ্য", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.school, "শিক্ষা", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.flight, "ভ্রমণ", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.family_restroom, "পরিবার", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.receipt, "বিল", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.trending_up, "বিনিয়োগ", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.restaurant, "খাবার", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.shopping_bag, "কেনাকাটা", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.directions_car, "পরিবহন", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.fitness_center, "ব্যায়াম", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.home, "বাসস্থান", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.savings, "সঞ্চয়", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.volunteer_activism, "দান", itemBgColor, iconColor, primaryTextColor),
-                _item(Icons.payments, "বেতন", itemBgColor, iconColor, primaryTextColor),
+                _item(
+                  Icons.card_giftcard,
+                  "উপহার",
+                  itemBgColor,
+                  primaryTextColor,
+                ),
+                _item(Icons.movie, "বিনোদন", itemBgColor, primaryTextColor),
+                _item(
+                  Icons.medical_services,
+                  "স্বাস্থ্য",
+                  itemBgColor,
+                  primaryTextColor,
+                ),
+                _item(Icons.school, "শিক্ষা", itemBgColor, primaryTextColor),
+                _item(Icons.flight, "ভ্রমণ", itemBgColor, primaryTextColor),
+                _item(
+                  Icons.family_restroom,
+                  "পরিবার",
+                  itemBgColor,
+                  primaryTextColor,
+                ),
+                _item(Icons.receipt, "বিল", itemBgColor, primaryTextColor),
+                _item(
+                  Icons.trending_up,
+                  "বিনিয়োগ",
+                  itemBgColor,
+                  primaryTextColor,
+                ),
+                _item(Icons.restaurant, "খাবার", itemBgColor, primaryTextColor),
+                _item(
+                  Icons.shopping_bag,
+                  "কেনাকাটা",
+                  itemBgColor,
+                  primaryTextColor,
+                ),
+                _item(
+                  Icons.directions_car,
+                  "পরিবহন",
+                  itemBgColor,
+                  primaryTextColor,
+                ),
+                _item(
+                  Icons.fitness_center,
+                  "ব্যায়াম",
+                  itemBgColor,
+                  primaryTextColor,
+                ),
+                _item(Icons.home, "বাসস্থান", itemBgColor, primaryTextColor),
+                _item(Icons.savings, "সঞ্চয়", itemBgColor, primaryTextColor),
+                _item(
+                  Icons.volunteer_activism,
+                  "দান",
+                  itemBgColor,
+                  primaryTextColor,
+                ),
+                _item(Icons.payments, "বেতন", itemBgColor, primaryTextColor),
                 Column(
                   children: [
                     Container(
@@ -100,12 +139,12 @@ class CategoriesBottomSheet extends StatelessWidget {
                       width: 55,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: isDark ? Colors.white38 : Colors.grey),
+                        border: Border.all(color: handleColor),
                       ),
-                      child: Icon(Icons.add, color: secondaryTextColor),
+                      child: const Icon(Icons.add, color: secondaryTextColor),
                     ),
                     const SizedBox(height: 6),
-                    Text(
+                    const Text(
                       "নতুন",
                       style: TextStyle(fontSize: 12, color: secondaryTextColor),
                     ),
@@ -118,13 +157,13 @@ class CategoriesBottomSheet extends StatelessWidget {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
+              color: Colors.white.withOpacity(0.05),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade300),
+              border: Border.all(color: Colors.white10),
             ),
             child: Row(
               children: [
-                Expanded(
+                const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -135,7 +174,7 @@ class CategoriesBottomSheet extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         "আপনার নিজস্ব লেবেল এবং আইকন যোগ করুন",
                         style: TextStyle(color: secondaryTextColor),
@@ -146,13 +185,16 @@ class CategoriesBottomSheet extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? Colors.white : Colors.black87,
-                    foregroundColor: isDark ? Colors.black : Colors.white,
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: const Text("শুরু করুন", style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "শুরু করুন",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ],
             ),
@@ -162,7 +204,7 @@ class CategoriesBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _item(IconData icon, String title, Color bgColor, Color iconColor, Color textColor) {
+  Widget _item(IconData icon, String title, Color bgColor, Color textColor) {
     return GestureDetector(
       onTap: () => onCategorySelected({"icon": icon, "name": title}),
       child: Column(
@@ -174,7 +216,7 @@ class CategoriesBottomSheet extends StatelessWidget {
               color: bgColor,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: iconColor),
+            child: Icon(icon, color: textColor.withOpacity(0.9)),
           ),
           const SizedBox(height: 6),
           Text(

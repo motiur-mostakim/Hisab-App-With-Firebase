@@ -75,6 +75,7 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
     } catch (e) {
       setState(() => _isGeneratingPdf = false);
       _showSnackbar('Error: $e');
+      print("Errors: $e");
     }
   }
 
@@ -641,13 +642,13 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
           _isGeneratingPdf,
           () => _downloadPdfReport(transactions),
         ),
-        _exportTile(
-          Icons.table_chart,
-          "CSV রিপোর্ট ডাউনলোড",
-          isDark,
-          _isGeneratingPdf,
-          () => _exportCsvReport(transactions),
-        ),
+        // _exportTile(
+        //   Icons.table_chart,
+        //   "CSV রিপোর্ট ডাউনলোড",
+        //   isDark,
+        //   _isGeneratingPdf,
+        //   () => _exportCsvReport(transactions),
+        // ),
         _exportTile(
           Icons.mail,
           "ইমেইল রিপোর্ট পাঠান",

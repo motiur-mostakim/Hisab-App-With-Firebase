@@ -23,7 +23,6 @@ class CategoriesBottomSheet extends StatelessWidget {
       ),
       child: Column(
         children: [
-          /// 🔥 DRAG HANDLE
           const SizedBox(height: 10),
           Container(
             width: 50,
@@ -33,10 +32,7 @@ class CategoriesBottomSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
           ),
-
           const SizedBox(height: 10),
-
-          /// 🔥 HEADER
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
@@ -57,8 +53,6 @@ class CategoriesBottomSheet extends StatelessWidget {
               ],
             ),
           ),
-
-          /// 🔥 SEARCH FIELD
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
@@ -76,8 +70,6 @@ class CategoriesBottomSheet extends StatelessWidget {
               ),
             ),
           ),
-
-          /// 🔥 GRID
           Expanded(
             child: GridView.count(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -101,8 +93,6 @@ class CategoriesBottomSheet extends StatelessWidget {
                 _item(Icons.savings, "সঞ্চয়", itemBgColor, iconColor, primaryTextColor),
                 _item(Icons.volunteer_activism, "দান", itemBgColor, iconColor, primaryTextColor),
                 _item(Icons.payments, "বেতন", itemBgColor, iconColor, primaryTextColor),
-
-                /// ADD NEW
                 Column(
                   children: [
                     Container(
@@ -124,8 +114,6 @@ class CategoriesBottomSheet extends StatelessWidget {
               ],
             ),
           ),
-
-          /// 🔥 BOTTOM CARD
           Container(
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),

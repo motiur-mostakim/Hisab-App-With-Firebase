@@ -10,10 +10,13 @@ class ReportScreen extends StatefulWidget {
   State<ReportScreen> createState() => _ReportScreenState();
 }
 
-class _ReportScreenState extends State<ReportScreen> {
+class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClientMixin {
   final TransactionService _transactionService = TransactionService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   String _reportType = "মাসিক";
+
+  @override
+  bool get wantKeepAlive => true;
 
   Map<String, double> _getCategoryTotals(
     List<TransactionModel> transactions,
@@ -54,6 +57,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -167,15 +171,6 @@ class _ReportScreenState extends State<ReportScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          "রিপোর্ট ইনসাইট",
-          style: TextStyle(
-            color: Color(0xFF60DCB2),
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 5),
         Text(
           "সারসংক্ষেপ",
           style: TextStyle(

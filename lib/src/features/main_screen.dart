@@ -14,16 +14,28 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   int currentIndex = 0;
+  late List<Widget> screens;
 
-  final screens = const [
-    DashboardScreen(),
-    AlarmScreen(),
-    NoteScreen(),
-    ReportScreen(),
-    ProfileScreen(),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    screens = const [
+      DashboardScreen(),
+      AlarmScreen(),
+      NoteScreen(),
+      ReportScreen(),
+      ProfileScreen(),
+    ];
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
 
   Future<void> _showExitDialog(BuildContext context) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;

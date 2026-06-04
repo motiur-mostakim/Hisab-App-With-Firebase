@@ -13,11 +13,14 @@ class NoteScreen extends StatefulWidget {
   State<NoteScreen> createState() => _NoteScreenState();
 }
 
-class _NoteScreenState extends State<NoteScreen> {
+class _NoteScreenState extends State<NoteScreen> with AutomaticKeepAliveClientMixin {
   final NoteService _noteService = NoteService();
   final NotificationService _notificationService = NotificationService();
   final FcmNotificationServices _fcmStorage = FcmNotificationServices();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  bool get wantKeepAlive => true;
 
   final List<String> _weekDays = [
     "সোম",
@@ -358,6 +361,7 @@ class _NoteScreenState extends State<NoteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(

@@ -40,9 +40,22 @@ class _AuthCheckState extends State<AuthCheck> {
             body: Center(child: CircularProgressIndicator()),
           );
         }
+        // Use the current user state to determine which screen to show
         if (snapshot.hasData) {
+          // Delay navigation to allow widget tree to stabilize
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && Navigator.of(context).canPop() == false) {
+              Navigator.of(context).pushReplacementNamed('/main');
+            }
+          });
           return const MainScreen();
         }
+        // Delay navigation to allow widget tree to stabilize
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && Navigator.of(context).canPop() == false) {
+            Navigator.of(context).pushReplacementNamed('/login');
+          }
+        });
         return const LoginScreen();
       },
     );

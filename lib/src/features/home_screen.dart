@@ -17,10 +17,13 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
+class _DashboardScreenState extends State<DashboardScreen> with AutomaticKeepAliveClientMixin {
   final FirebaseAuth auth = FirebaseAuth.instance;
   final TransactionService _transactionService = TransactionService();
   int _notificationCount = 0;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -115,6 +118,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -485,14 +489,8 @@ class _BottomSection extends StatelessWidget {
               );
             }
 
-            final transactions = snapshot.data!
-                .where((t) => t.type == 'income' || t.type == 'expense')
-                .take(10)
-                .toList();
-
-            if (transactions.isEmpty) {
-              return const Center(child: Text("সাম্প্রতিক কোনো আয়-ব্যয় নেই"));
-            }
+            // ধার সহ সব লেনদেন দেখানোর জন্য ফিল্টার আপডেট
+            final transactions = snapshot.data!.take(10).toList();
 
             return ListView.builder(
               shrinkWrap: true,
@@ -500,6 +498,12 @@ class _BottomSection extends StatelessWidget {
               itemCount: transactions.length,
               itemBuilder: (context, index) {
                 final txn = transactions[index];
+                final isLoan = txn.type.contains('loan');
+                
+                // ধারের জন্য আলাদা কালার এবং আইকন
+                final color = isLoan ? Colors.orange : (txn.type == 'expense' ? Colors.red : Colors.green);
+                final icon = isLoan ? Icons.handshake : (txn.type == 'expense' ? Icons.remove : Icons.add);
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   padding: const EdgeInsets.all(12),
@@ -515,14 +519,10 @@ class _BottomSection extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: (txn.type == 'expense' ? Colors.red : Colors.green)
-                              .withOpacity(0.1),
+                          color: color.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
-                          txn.type == 'expense' ? Icons.remove : Icons.add,
-                          color: txn.type == 'expense' ? Colors.red : Colors.green,
-                        ),
+                        child: Icon(icon, color: color),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -530,14 +530,18 @@ class _BottomSection extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              txn.category ?? "অন্যান্য",
+                              isLoan 
+                                  ? (txn.type == 'loan_given' ? "ধার দেওয়া" : "ধার নেওয়া")
+                                  : (txn.category ?? "অন্যান্য"),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
                               ),
                             ),
                             Text(
-                              txn.note!.isEmpty ? (txn.type == 'expense' ? "ব্যয়" : "আয়") : txn.note ?? "",
+                              isLoan 
+                                  ? "ব্যক্তি: ${txn.personId ?? 'অজানা'}" 
+                                  : (txn.note?.isEmpty ?? true ? (txn.type == 'expense' ? "ব্যয়" : "আয়") : txn.note!),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -549,9 +553,9 @@ class _BottomSection extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        "${txn.type == 'expense' ? '-' : '+'} ৳${txn.amount.toStringAsFixed(0)}",
+                        "${(txn.type == 'expense' || txn.type == 'loan_given') ? '-' : '+'} ৳${txn.amount.toStringAsFixed(0)}",
                         style: TextStyle(
-                          color: txn.type == 'expense' ? Colors.red : Colors.green,
+                          color: color,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),

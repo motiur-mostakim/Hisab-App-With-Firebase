@@ -13,11 +13,14 @@ class AlarmScreen extends StatefulWidget {
   State<AlarmScreen> createState() => _AlarmScreenState();
 }
 
-class _AlarmScreenState extends State<AlarmScreen> {
+class _AlarmScreenState extends State<AlarmScreen> with AutomaticKeepAliveClientMixin {
   final NoteServicesForLocalDatabase _noteService =
       NoteServicesForLocalDatabase();
   final NotificationService _notificationService = NotificationService();
   List<NoteModel> _notes = [];
+
+  @override
+  bool get wantKeepAlive => true;
 
   final List<String> _weekDays = [
     "সোম",
@@ -330,6 +333,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0C0C1F) : Colors.white,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/model/transaction_model.dart';
 import '../../core/services/transaction_service.dart';
+import '../../core/services/dashboard_calculations.dart';
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -84,24 +85,21 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
                     );
                   }
 
-                  final filteredTransactions = _filterByReportType(
-                    snapshot.data!,
-                  );
+                  final allTransactions = snapshot.data!;
+                  final filteredTransactions = _filterByReportType(allTransactions);
+                  final netWorth = DashboardCalculations.calculateNetWorth(allTransactions);
                   final stats = _calculateStats(filteredTransactions);
-                  final categoryTotals = _getCategoryTotals(
-                    filteredTransactions,
-                    true,
-                  );
+                  final categoryTotals = _getCategoryTotals(filteredTransactions, true);
 
                   return SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
+                        _buildTotalAssetCard(netWorth, isDark),
+                        const SizedBox(height: 20),
                         _buildTopSection(isDark),
                         const SizedBox(height: 20),
-                        _buildMainChart(filteredTransactions, isDark),
-                        const SizedBox(height: 20),
-                        _buildSavingsCard(stats),
+                        _buildMainChart(allTransactions, isDark),
                         const SizedBox(height: 20),
                         _buildTopCategories(categoryTotals, isDark),
                         const SizedBox(height: 20),
@@ -167,6 +165,63 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
     );
   }
 
+  Widget _buildTotalAssetCard(double netWorth, bool isDark) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF60DCB2), Color(0xFF009672)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF60DCB2).withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                "মোট সম্পদ (Total Asset)",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.account_balance, color: Colors.white, size: 20),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "৳${netWorth.toStringAsFixed(2)}",
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTopSection(bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,7 +240,10 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
             _chip("মাসিক", _reportType == "মাসিক", isDark),
             _chip("বার্ষিক", _reportType == "বার্ষিক", isDark),
             const Spacer(),
-            Icon(Icons.share, color: isDark ? Colors.white70 : Colors.black54),
+            IconButton(
+              onPressed: () {}, // Share functionality
+              icon: Icon(Icons.share, color: isDark ? Colors.white70 : Colors.black54),
+            ),
           ],
         ),
       ],
@@ -218,18 +276,23 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
   }
 
   Widget _buildMainChart(List<TransactionModel> transactions, bool isDark) {
+    final monthlyData = _getMonthlyHistory(transactions);
+    final maxAmount = monthlyData.values
+        .map((e) => e['income']! > e['expense']! ? e['income']! : e['expense']!)
+        .fold(0.0, (max, e) => e > max ? e : max);
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A1A2E) : Colors.grey[100],
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
         children: [
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              "আয় বনাম ব্যয়",
+              "আয় বনাম ব্যয় (বিগত ৬ মাস)",
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -237,32 +300,41 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(6, (index) {
+            children: monthlyData.entries.map((entry) {
+              final incomeHeight = maxAmount > 0 ? (entry.value['income']! / maxAmount) * 120 : 0.0;
+              final expenseHeight = maxAmount > 0 ? (entry.value['expense']! / maxAmount) * 120 : 0.0;
+
               return Column(
                 children: [
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Container(
-                        width: 6,
-                        height: 80 + (index * 10),
-                        color: const Color(0xFF60DCB2),
+                        width: 10,
+                        height: incomeHeight + 5,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF60DCB2),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                        ),
                       ),
                       const SizedBox(width: 4),
                       Container(
-                        width: 6,
-                        height: 50 + (index * 5),
-                        color: Colors.redAccent,
+                        width: 10,
+                        height: expenseHeight + 5,
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.withOpacity(0.8),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
-                    ["Oct", "Nov", "Dec", "Jan", "Feb", "Mar"][index],
+                    entry.key,
                     style: TextStyle(
                       fontSize: 10,
                       color: isDark ? Colors.white70 : Colors.black54,
@@ -270,52 +342,70 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
                   ),
                 ],
               );
-            }),
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _chartLegend("আয়", const Color(0xFF60DCB2), isDark),
+              const SizedBox(width: 20),
+              _chartLegend("ব্যয়", Colors.redAccent, isDark),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSavingsCard(Map<String, double> stats) {
-    final balance = stats['balance'] ?? 0;
-    final isPositive = balance >= 0;
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: isPositive
-              ? [const Color(0xFF60DCB2), const Color(0xFF009672)]
-              : [Colors.redAccent, Colors.orange],
+  Widget _chartLegend(String label, Color color, bool isDark) {
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
         ),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.account_balance_wallet,
-            size: 30,
-            color: Colors.white,
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.white70 : Colors.black54,
           ),
-          const SizedBox(height: 10),
-          const Text(
-            "নিট উদ্বৃত্ত (Net Balance)",
-            style: TextStyle(color: Colors.white70),
-          ),
-          Text(
-            "\৳${balance.toStringAsFixed(2)}",
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
+  }
+
+  Map<String, Map<String, double>> _getMonthlyHistory(List<TransactionModel> transactions) {
+    final Map<String, Map<String, double>> history = {};
+    final now = DateTime.now();
+    
+    // Initialize last 6 months
+    for (int i = 5; i >= 0; i--) {
+      final date = DateTime(now.year, now.month - i, 1);
+      final monthName = _getMonthName(date.month);
+      history[monthName] = {'income': 0.0, 'expense': 0.0};
+    }
+
+    for (var txn in transactions) {
+      final date = txn.transactionDate;
+      final monthName = _getMonthName(date.month);
+      if (history.containsKey(monthName)) {
+        if (txn.type == 'income') {
+          history[monthName]!['income'] = (history[monthName]!['income'] ?? 0) + txn.amount;
+        } else if (txn.type == 'expense') {
+          history[monthName]!['expense'] = (history[monthName]!['expense'] ?? 0) + txn.amount;
+        }
+      }
+    }
+    return history;
+  }
+
+  String _getMonthName(int month) {
+    const names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return names[month - 1];
   }
 
   Widget _buildTopCategories(Map<String, double> categoryTotals, bool isDark) {
@@ -324,6 +414,7 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
 
     return Container(
       padding: const EdgeInsets.all(20),
+      width: double.infinity,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A1A2E) : Colors.grey[100],
         borderRadius: BorderRadius.circular(20),
@@ -346,7 +437,7 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
             ...sortedCategories.take(3).map((entry) {
               return _category(
                 entry.key,
-                "\৳${entry.value.toStringAsFixed(2)}",
+                "৳${entry.value.toStringAsFixed(2)}",
                 Colors.redAccent,
                 isDark,
               );
@@ -380,30 +471,52 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
   Widget _buildExportOptions(bool isDark) {
     return Column(
       children: [
-        _exportTile(Icons.picture_as_pdf, "PDF রিপোর্ট ডাউনলোড", isDark),
-        _exportTile(Icons.table_chart, "CSV রিপোর্ট ডাউনলোড", isDark),
-        _exportTile(Icons.mail, "ইমেইল রিপোর্ট পাঠান", isDark),
+        _exportTile(Icons.picture_as_pdf, "PDF রিপোর্ট ডাউনলোড", isDark, () {
+          _showActionSnackbar("PDF ডাউনলোড শুরু হচ্ছে...");
+        }),
+        _exportTile(Icons.table_chart, "CSV রিপোর্ট ডাউনলোড", isDark, () {
+          _showActionSnackbar("CSV ডাউনলোড শুরু হচ্ছে...");
+        }),
+        _exportTile(Icons.mail, "ইমেইল রিপোর্ট পাঠান", isDark, () {
+          _showActionSnackbar("ইমেইল পাঠানো হচ্ছে...");
+        }),
       ],
     );
   }
 
-  Widget _exportTile(IconData icon, String title, bool isDark) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
-        borderRadius: BorderRadius.circular(16),
+  void _showActionSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF60DCB2),
       ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFF60DCB2)),
-          const SizedBox(width: 10),
-          Text(
-            title,
-            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-          ),
-        ],
+    );
+  }
+
+  Widget _exportTile(IconData icon, String title, bool isDark, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFF60DCB2)),
+            const SizedBox(width: 10),
+            Text(
+              title,
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            ),
+            const Spacer(),
+            const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
+          ],
+        ),
       ),
     );
   }

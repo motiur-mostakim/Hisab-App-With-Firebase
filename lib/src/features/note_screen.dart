@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/model/note_model.dart';
+import '../../core/model/task_model.dart';
 import '../../core/services/note_service.dart';
+import '../../core/services/task_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/fcm_notification_services.dart';
 
@@ -13,11 +15,15 @@ class NoteScreen extends StatefulWidget {
   State<NoteScreen> createState() => _NoteScreenState();
 }
 
-class _NoteScreenState extends State<NoteScreen> with AutomaticKeepAliveClientMixin {
+class _NoteScreenState extends State<NoteScreen>
+    with AutomaticKeepAliveClientMixin, SingleTickerProviderStateMixin {
   final NoteService _noteService = NoteService();
+  final TaskService _taskService = TaskService();
   final NotificationService _notificationService = NotificationService();
   final FcmNotificationServices _fcmStorage = FcmNotificationServices();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  late TabController _tabController;
 
   @override
   bool get wantKeepAlive => true;
@@ -36,8 +42,14 @@ class _NoteScreenState extends State<NoteScreen> with AutomaticKeepAliveClientMi
   void initState() {
     super.initState();
     _notificationService.initNotification();
+    _tabController = TabController(length: 2, vsync: this);
   }
 
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   String _formatDate(DateTime date) {
     return "${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}";
@@ -52,9 +64,8 @@ class _NoteScreenState extends State<NoteScreen> with AutomaticKeepAliveClientMi
     final contentController = TextEditingController(text: note?.content);
     DateTime selectedDate = note?.createdAt ?? DateTime.now();
     DateTime? alarmTime = note?.alarmTime;
-    List<int> selectedRepeatDays = note?.repeatDays != null
-        ? List.from(note!.repeatDays!)
-        : [];
+    List<int> selectedRepeatDays =
+        note?.repeatDays != null ? List.from(note!.repeatDays!) : [];
 
     final dateController = TextEditingController(
       text: _formatOnlyDate(selectedDate),
@@ -287,15 +298,14 @@ class _NoteScreenState extends State<NoteScreen> with AutomaticKeepAliveClientMi
                       createdAt: selectedDate,
                       updatedAt: DateTime.now(),
                       alarmTime: alarmTime,
-                      repeatDays: selectedRepeatDays.isEmpty
-                          ? null
-                          : selectedRepeatDays,
+                      repeatDays:
+                          selectedRepeatDays.isEmpty ? null : selectedRepeatDays,
                     );
 
                     if (note == null) {
                       await _noteService.addNote(newNote);
                     } else {
-                      await _updateNote(newNote);
+                      await _noteService.updateNote(newNote);
                     }
 
                     if (alarmTime != null) {
@@ -355,8 +365,93 @@ class _NoteScreenState extends State<NoteScreen> with AutomaticKeepAliveClientMi
     );
   }
 
-  Future<void> _updateNote(NoteModel note) async {
-    await _noteService.updateNote(note);
+  void _showTaskDialog({TaskModel? task}) {
+    final titleController = TextEditingController(text: task?.title);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E1E32) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: Text(
+            task == null ? "নতুন কাজ" : "কাজ এডিট করুন",
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: TextField(
+            controller: titleController,
+            autofocus: true,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+            decoration: InputDecoration(
+              hintText: "কাজের নাম",
+              hintStyle: const TextStyle(color: Colors.grey),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white24 : Colors.grey,
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                "বাতিল",
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF60DCB2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: () async {
+                if (titleController.text.isEmpty) return;
+                final userId = _auth.currentUser?.uid ?? '';
+
+                if (task == null) {
+                  final newTask = TaskModel(
+                    id: const Uuid().v4(),
+                    userId: userId,
+                    title: titleController.text,
+                    createdAt: DateTime.now(),
+                  );
+                  await _taskService.addTask(newTask);
+                } else {
+                  final updatedTask = TaskModel(
+                    id: task.id,
+                    userId: userId,
+                    title: titleController.text,
+                    isCompleted: task.isCompleted,
+                    createdAt: task.createdAt,
+                  );
+                  await _taskService.updateTask(updatedTask);
+                }
+
+                if (mounted) Navigator.pop(context);
+              },
+              child: Text(
+                task == null ? "সংরক্ষণ" : "আপডেট",
+                style: const TextStyle(
+                  color: Color(0xFF003829),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -365,134 +460,229 @@ class _NoteScreenState extends State<NoteScreen> with AutomaticKeepAliveClientMi
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("নোট", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("নোট ও টাস্ক", style: TextStyle(fontWeight: FontWeight.bold)),
+        bottom: TabBar(
+          indicatorSize: TabBarIndicatorSize.tab,
+          controller: _tabController,
+          dividerHeight: 0,
+          indicatorColor: const Color(0xFF60DCB2),
+          labelColor: const Color(0xFF60DCB2),
+          unselectedLabelColor: Colors.grey,
+          tabs: const [
+            Tab(icon: Icon(Icons.note), text: "নোট"),
+            Tab(icon: Icon(Icons.check_circle), text: "টাস্ক"),
+          ],
+        ),
       ),
-      body: StreamBuilder<List<NoteModel>>(
-        stream: _noteService.getNotes(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildNotesTab(isDark),
+          _buildTasksTab(isDark),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'note_fab',
+        backgroundColor: const Color(0xFF60DCB2),
+        onPressed: () {
+          if (_tabController.index == 0) {
+            _showNoteDialog();
+          } else {
+            _showTaskDialog();
           }
-          
-          final notes = snapshot.data ?? [];
-          
-          if (notes.isEmpty) {
-            return const Center(
-              child: Text("কোনো নোট নেই", style: TextStyle(color: Colors.grey)),
-            );
-          }
+        },
+        child: const Icon(Icons.add, color: Color(0xFF003829)),
+      ),
+    );
+  }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: notes.length,
-            itemBuilder: (context, index) {
-              final note = notes[index];
-              return Card(
-                color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              note.title ?? "",
-                              style: TextStyle(
-                                color: isDark ? Colors.white : Colors.black87,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 18,
-                              ),
+  Widget _buildNotesTab(bool isDark) {
+    return StreamBuilder<List<NoteModel>>(
+      stream: _noteService.getNotes(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final notes = snapshot.data ?? [];
+
+        if (notes.isEmpty) {
+          return const Center(
+            child: Text("কোনো নোট নেই", style: TextStyle(color: Colors.grey)),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: notes.length,
+          itemBuilder: (context, index) {
+            final note = notes[index];
+            return Card(
+              color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            note.title ?? "",
+                            style: TextStyle(
+                              color: isDark ? Colors.white : Colors.black87,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
                             ),
                           ),
-                          Row(
-                            children: [
-                              const SizedBox(height: 8),
-                              InkWell(
-                                child: const Icon(
-                                  Icons.edit,
-                                  color: Colors.blueAccent,
-                                  size: 20,
-                                ),
-                                onTap: () => _showNoteDialog(note: note),
+                        ),
+                        Row(
+                          children: [
+                            InkWell(
+                              child: const Icon(
+                                Icons.edit,
+                                color: Colors.blueAccent,
+                                size: 20,
                               ),
-                              SizedBox(width: 16,),
-                              InkWell(
-                                child: const Icon(
-                                  Icons.delete,
-                                  color: Colors.redAccent,
-                                  size: 20,
-                                ),
-                                onTap: () =>
-                                    _noteService.deleteNote(note.id),
+                              onTap: () => _showNoteDialog(note: note),
+                            ),
+                            const SizedBox(width: 16),
+                            InkWell(
+                              child: const Icon(
+                                Icons.delete,
+                                color: Colors.redAccent,
+                                size: 20,
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      if(note.content != null)
+                              onTap: () => _noteService.deleteNote(note.id),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    if (note.content != null && note.content!.isNotEmpty) ...[
                       const SizedBox(height: 8),
-                      if(note.content != null)
                       Text(
                         note.content ?? "",
                         style: TextStyle(
                           color: isDark ? Colors.white70 : Colors.black54,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.access_time,
-                            size: 14,
+                    ],
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          size: 14,
+                          color: isDark ? Colors.tealAccent : Colors.teal,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatDate(note.createdAt),
+                          style: TextStyle(
                             color: isDark ? Colors.tealAccent : Colors.teal,
+                            fontSize: 12,
+                          ),
+                        ),
+                        if (note.alarmTime != null) ...[
+                          const SizedBox(width: 12),
+                          const Icon(
+                            Icons.alarm,
+                            size: 14,
+                            color: Colors.orange,
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            _formatDate(note.createdAt),
-                            style: TextStyle(
-                              color: isDark ? Colors.tealAccent : Colors.teal,
+                            "${note.alarmTime!.hour}:${note.alarmTime!.minute.toString().padLeft(2, '0')}${note.repeatDays != null ? ' (রিপিট)' : ''}",
+                            style: const TextStyle(
+                              color: Colors.orange,
                               fontSize: 12,
                             ),
                           ),
-                          if (note.alarmTime != null) ...[
-                            const SizedBox(width: 12),
-                            const Icon(
-                              Icons.alarm,
-                              size: 14,
-                              color: Colors.orange,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "${note.alarmTime!.hour}:${note.alarmTime!.minute.toString().padLeft(2, '0')}${note.repeatDays != null ? ' (রিপিট)' : ''}",
-                              style: const TextStyle(
-                                color: Colors.orange,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
                         ],
-                      ),
-                    ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildTasksTab(bool isDark) {
+    return StreamBuilder<List<TaskModel>>(
+      stream: _taskService.getTasks(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final tasks = snapshot.data ?? [];
+
+        if (tasks.isEmpty) {
+          return const Center(
+            child: Text("কোনো টাস্ক নেই", style: TextStyle(color: Colors.grey)),
+          );
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: tasks.length,
+          itemBuilder: (context, index) {
+            final task = tasks[index];
+            return Card(
+              color: isDark ? const Color(0xFF1E1E32) : Colors.grey[200],
+              margin: const EdgeInsets.only(bottom: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: ListTile(
+                leading: Checkbox(
+                  value: task.isCompleted,
+                  activeColor: const Color(0xFF60DCB2),
+                  onChanged: (value) {
+                    _taskService.toggleTaskStatus(task.id, value ?? false);
+                  },
+                ),
+                title: Text(
+                  task.title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                    decoration: task.isCompleted
+                        ? TextDecoration.lineThrough
+                        : TextDecoration.none,
+                    decorationThickness: 1.5,
+                    fontSize: 16,
                   ),
                 ),
-              );
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'note_fab',
-        backgroundColor: const Color(0xFF60DCB2),
-        onPressed: () => _showNoteDialog(),
-        child: const Icon(Icons.add, color: Color(0xFF003829)),
-      ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blueAccent, size: 20),
+                      onPressed: () => _showTaskDialog(task: task),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+                      onPressed: () => _taskService.deleteTask(task.id),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

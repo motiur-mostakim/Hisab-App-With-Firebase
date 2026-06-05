@@ -319,7 +319,7 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
                 radius: 18,
                 backgroundImage: NetworkImage(
                   _auth.currentUser?.photoURL ??
-                      "https://i.pravatar.cc/150?img=3",
+                      "https://lh3.googleusercontent.com/a/ACg8ocIxFdhaqwmoBefje8HCKUATauYQpeQyecV7wZCCyQbvLOXMk8lHKA=s432-c-no",
                 ),
               ),
             ],

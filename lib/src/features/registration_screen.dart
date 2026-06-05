@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'main_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -8,9 +10,112 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
+
   bool isChecked = false;
   bool obscure1 = true;
   bool obscure2 = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _register() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final confirmPassword = _confirmPasswordController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('সবগুলো তথ্য পূরণ করুন'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('পাসওয়ার্ড মিলছে না'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (!isChecked) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('শর্তাবলী মেনে নিন'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (userCredential.user != null) {
+        // Update display name
+        await userCredential.user!.updateDisplayName(name);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('সফলভাবে রেজিস্ট্রেশন হয়েছে'),
+              backgroundColor: Color(0xFF60DCB2),
+            ),
+          );
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+            (route) => false,
+          );
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'রেজিস্ট্রেশন ব্যর্থ হয়েছে';
+      if (e.code == 'weak-password') {
+        message = 'পাসওয়ার্ডটি খুব দুর্বল';
+      } else if (e.code == 'email-already-in-use') {
+        message = 'এই ইমেলটি ইতিপূর্বে ব্যবহার করা হয়েছে';
+      } else if (e.code == 'invalid-email') {
+        message = 'সঠিক ইমেল ঠিকানা দিন';
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ত্রুটি: ${e.toString()}'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,14 +194,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 30),
 
                     /// FORM
-                    _input("পুরো নাম", Icons.person, "আপনার নাম লিখুন"),
-                    _input("ইমেল ঠিকানা", Icons.mail, "example@email.com"),
+                    _input("পুরো নাম", Icons.person, "আপনার নাম লিখুন", controller: _nameController),
+                    _input("ইমেল ঠিকানা", Icons.mail, "example@email.com", controller: _emailController),
                     _input(
                       "পাসওয়ার্ড",
                       Icons.lock,
                       "••••••••",
                       isPassword: true,
                       isFirst: true,
+                      controller: _passwordController,
                     ),
                     _input(
                       "পাসওয়ার্ড নিশ্চিত করুন",
@@ -104,6 +210,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       "••••••••",
                       isPassword: true,
                       isFirst: false,
+                      controller: _confirmPasswordController,
                     ),
 
                     const SizedBox(height: 15),
@@ -132,23 +239,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 20),
 
                     /// BUTTON
-                    Container(
-                      width: double.infinity,
-                      height: 55,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF60DCB2), Color(0xFF009672)],
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          "রেজিস্ট্রেশন করুন →",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF003829),
-                            fontSize: 16,
+                    InkWell(
+                      onTap: _isLoading ? null : _register,
+                      child: Container(
+                        width: double.infinity,
+                        height: 55,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF60DCB2), Color(0xFF009672)],
                           ),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Center(
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF003829),
+                                  ),
+                                )
+                              : const Text(
+                                  "রেজিস্ট্রেশন করুন →",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF003829),
+                                    fontSize: 16,
+                                  ),
+                                ),
                         ),
                       ),
                     ),
@@ -191,6 +310,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     String label,
     IconData icon,
     String hint, {
+    required TextEditingController controller,
     bool isPassword = false,
     bool isFirst = true,
   }) {
@@ -207,6 +327,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
           const SizedBox(height: 5),
           TextField(
+            controller: controller,
             obscureText: isPassword ? (isFirst ? obscure1 : obscure2) : false,
             style: TextStyle(color: isDark ? Colors.white : Colors.black87),
             decoration: InputDecoration(

@@ -133,6 +133,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        scrolledUnderElevation: 0,
         title: Text(isLoan 
           ? (isExpense ? "ধার দেওয়া" : "ধার নেওয়া")
           : (isExpense ? "নতুন ব্যয়" : "নতুন আয়")),
@@ -146,13 +147,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Amount Input Section
             Row(
               children: [
                 Text(
                   "৳",
                   style: TextStyle(
-                    fontSize: 40,
+                    fontSize: 35,
                     fontWeight: FontWeight.bold,
                     color: isLoan ? Colors.orange : (isExpense ? Colors.red : Colors.green),
                   ),
@@ -178,8 +178,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ],
             ),
             const SizedBox(height: 20),
-
-            // Income/Expense Toggle
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -194,9 +192,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
-
-            // Loan/Dhar Switch Widget
+            const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
@@ -245,10 +241,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 ],
               ),
             ),
-
-            const SizedBox(height: 25),
-
-            // Person Name Field (Only for Loan)
+            const SizedBox(height: 16),
             if (isLoan) ...[
               Text("ব্যক্তির নাম", style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
@@ -266,13 +259,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               ),
               const SizedBox(height: 20),
             ],
-
-            // Category Selection (Hidden for Loan if needed, but keeping it visible for flexibility)
             if (!isLoan) ...[
               Text("বিভাগ নির্বাচন করুন", style: TextStyle(color: secondaryTextColor)),
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
               SizedBox(
-                height: 100,
+                height: 65,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: categories.length,
@@ -289,7 +280,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         }
                       },
                       child: Container(
-                        width: 90,
+                        width: 75,
                         margin: const EdgeInsets.only(right: 10),
                         decoration: BoxDecoration(
                           color: isSelected
@@ -317,7 +308,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: 25),
+              const SizedBox(height: 16),
             ],
 
             // Date Selection
@@ -335,7 +326,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 suffixIcon: const Icon(Icons.calendar_today, color: Colors.grey, size: 20),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // Description/Note
             Text("বিবরণ (ঐচ্ছিক)", style: TextStyle(color: secondaryTextColor)),
@@ -352,15 +343,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                 hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
               ),
             ),
-
-            const SizedBox(height: 35),
-
-            // Save Button
+            const SizedBox(height: 30),
             GestureDetector(
               onTap: _saveTransaction,
               child: Container(
                 width: double.infinity,
-                height: 55,
+                height: 50,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: isLoan 
@@ -397,7 +385,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       onTap: () {
         setState(() {
           isExpense = value;
-          // When switching, we don't necessarily reset isLoan, but keep it consistent
         });
       },
       child: Container(

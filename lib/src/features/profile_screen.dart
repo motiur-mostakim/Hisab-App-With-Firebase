@@ -5,8 +5,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hisab_app/main.dart';
 import 'package:hisab_app/src/features/edit_profile_screen.dart';
 import 'package:hisab_app/src/features/debt_history_screen.dart';
-import 'package:hisab_app/src/features/history_screen.dart'; // ইতিহাস স্ক্রিন ইম্পোর্ট
+import 'package:hisab_app/src/features/history_screen.dart';
 import '../../core/services/transaction_service.dart';
+import 'login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -69,7 +70,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                   child: CircleAvatar(
                     radius: 55,
                     backgroundImage: NetworkImage(
-                      auth.currentUser?.photoURL ?? "https://i.pravatar.cc/300",
+                      auth.currentUser?.photoURL ?? "https://lh3.googleusercontent.com/a/ACg8ocIxFdhaqwmoBefje8HCKUATauYQpeQyecV7wZCCyQbvLOXMk8lHKA=s432-c-no",
                     ),
                   ),
                 ),
@@ -127,7 +128,7 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
               ),
             ),
             _menuItem(
-              Icons.history, // অ্যালার্মের জায়গায় ইতিহাস
+              Icons.history,
               "ইতিহাস",
               onTap: () => Navigator.push(
                 context,
@@ -182,6 +183,9 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                 } catch (e) {
                   debugPrint("Error during sign out: $e");
                   await auth.signOut();
+                }
+                if (mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
                 }
               },
               child: Container(

@@ -15,7 +15,85 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signInWithEmail() async {
+    if (_emailController.text.trim().isEmpty ||
+        _passwordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('অনুগ্রহ করে ইমেল এবং পাসওয়ার্ড প্রদান করুন'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      if (userCredential.user != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('সফলভাবে লগইন করা হয়েছে'),
+            backgroundColor: Color(0xFF60DCB2),
+          ),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'লগইন করতে সমস্যা হয়েছে';
+      if (e.code == 'user-not-found') {
+        message = 'এই ইমেল দিয়ে কোনো ব্যবহারকারী পাওয়া যায়নি';
+      } else if (e.code == 'wrong-password') {
+        message = 'ভুল পাসওয়ার্ড';
+      } else if (e.code == 'invalid-email') {
+        message = 'ভুল ইমেল ফরম্যাট';
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('লগইন ব্যর্থ হয়েছে: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   Future<void> _signInWithGoogle() async {
     setState(() {
@@ -133,6 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       icon: Icons.mail,
                       hint: "name@example.com",
                       label: "ইমেল বা ফোন নম্বর",
+                      controller: _emailController,
                     ),
                     const SizedBox(height: 20),
                     _inputField(
@@ -140,10 +219,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       hint: "••••••••",
                       label: "পাসওয়ার্ড",
                       isPassword: true,
+                      controller: _passwordController,
                     ),
                     const SizedBox(height: 25),
                     InkWell(
-                      onTap: () {},
+                      onTap: _isLoading ? null : _signInWithEmail,
                       child: Container(
                         width: double.infinity,
                         height: 55,
@@ -153,15 +233,24 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           borderRadius: BorderRadius.circular(18),
                         ),
-                        child: const Center(
-                          child: Text(
-                            "লগইন করুন →",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF003829),
-                              fontSize: 16,
-                            ),
-                          ),
+                        child: Center(
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF003829),
+                                  ),
+                                )
+                              : const Text(
+                                  "লগইন করুন →",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF003829),
+                                    fontSize: 16,
+                                  ),
+                                ),
                         ),
                       ),
                     ),
@@ -268,6 +357,7 @@ class _LoginScreenState extends State<LoginScreen> {
     required IconData icon,
     required String hint,
     required String label,
+    required TextEditingController controller,
     bool isPassword = false,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -283,6 +373,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         const SizedBox(height: 8),
         TextField(
+          controller: controller,
           obscureText: isPassword,
           style: TextStyle(color: isDark ? Colors.white : Colors.black87),
           decoration: InputDecoration(

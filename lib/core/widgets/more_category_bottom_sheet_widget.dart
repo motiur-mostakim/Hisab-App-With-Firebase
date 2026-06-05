@@ -1,24 +1,55 @@
 import 'package:flutter/material.dart';
 
-class CategoriesBottomSheet extends StatelessWidget {
+class CategoriesBottomSheet extends StatefulWidget {
   final Function(Map<String, dynamic>) onCategorySelected;
 
   const CategoriesBottomSheet({super.key, required this.onCategorySelected});
 
   @override
+  State<CategoriesBottomSheet> createState() => _CategoriesBottomSheetState();
+}
+
+class _CategoriesBottomSheetState extends State<CategoriesBottomSheet> {
+  final List<Map<String, dynamic>> allCategories = [
+    {"icon": Icons.card_giftcard, "name": "উপহার"},
+    {"icon": Icons.movie, "name": "বিনোদন"},
+    {"icon": Icons.medical_services, "name": "স্বাস্থ্য"},
+    {"icon": Icons.school, "name": "শিক্ষা"},
+    {"icon": Icons.flight, "name": "ভ্রমণ"},
+    {"icon": Icons.family_restroom, "name": "পরিবার"},
+    {"icon": Icons.receipt, "name": "বিল"},
+    {"icon": Icons.trending_up, "name": "বিনিয়োগ"},
+    {"icon": Icons.restaurant, "name": "খাবার"},
+    {"icon": Icons.shopping_bag, "name": "কেনাকাটা"},
+    {"icon": Icons.directions_car, "name": "পরিবহন"},
+    {"icon": Icons.fitness_center, "name": "ব্যায়াম"},
+    {"icon": Icons.home, "name": "বাসস্থান"},
+    {"icon": Icons.savings, "name": "সঞ্চয়"},
+    {"icon": Icons.volunteer_activism, "name": "দান"},
+    {"icon": Icons.payments, "name": "বেতন"},
+  ];
+
+  String searchQuery = "";
+
+  @override
   Widget build(BuildContext context) {
-    // Strictly Black and White Theme
-    const backgroundColor = Colors.black;
-    const primaryTextColor = Colors.white;
-    const secondaryTextColor = Colors.white70;
-    const handleColor = Colors.white24;
-    final searchFillColor = Colors.white.withOpacity(0.1);
-    final itemBgColor = Colors.white.withOpacity(0.1);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? const Color(0xFF121212) : Colors.white;
+    final primaryTextColor = isDark ? Colors.white : Colors.black87;
+    final secondaryTextColor = isDark ? Colors.white70 : Colors.black54;
+    final handleColor = isDark ? Colors.white24 : Colors.black12;
+    final searchFillColor = isDark ? Colors.white.withOpacity(0.1) : Colors.grey[200];
+    final itemBgColor = isDark ? Colors.white.withOpacity(0.1) : Colors.grey[100];
+
+    final filteredCategories = allCategories
+        .where((cat) =>
+            cat["name"].toString().toLowerCase().contains(searchQuery.toLowerCase()))
+        .toList();
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: backgroundColor,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
         children: [
@@ -36,7 +67,7 @@ class CategoriesBottomSheet extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
-                const Text(
+                Text(
                   "অন্যান্য বিভাগ",
                   style: TextStyle(
                     fontSize: 20,
@@ -47,7 +78,7 @@ class CategoriesBottomSheet extends StatelessWidget {
                 const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close, color: secondaryTextColor),
+                  icon: Icon(Icons.close, color: secondaryTextColor),
                 ),
               ],
             ),
@@ -55,7 +86,12 @@ class CategoriesBottomSheet extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: TextField(
-              style: const TextStyle(color: primaryTextColor),
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value;
+                });
+              },
+              style: TextStyle(color: primaryTextColor),
               decoration: InputDecoration(
                 hintText: "বিভাগ খুঁজুন...",
                 hintStyle: const TextStyle(color: Colors.grey),
@@ -70,100 +106,58 @@ class CategoriesBottomSheet extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: GridView.count(
+            child: GridView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              crossAxisCount: 4,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 20,
-              children: [
-                _item(
-                  Icons.card_giftcard,
-                  "উপহার",
-                  itemBgColor,
-                  primaryTextColor,
-                ),
-                _item(Icons.movie, "বিনোদন", itemBgColor, primaryTextColor),
-                _item(
-                  Icons.medical_services,
-                  "স্বাস্থ্য",
-                  itemBgColor,
-                  primaryTextColor,
-                ),
-                _item(Icons.school, "শিক্ষা", itemBgColor, primaryTextColor),
-                _item(Icons.flight, "ভ্রমণ", itemBgColor, primaryTextColor),
-                _item(
-                  Icons.family_restroom,
-                  "পরিবার",
-                  itemBgColor,
-                  primaryTextColor,
-                ),
-                _item(Icons.receipt, "বিল", itemBgColor, primaryTextColor),
-                _item(
-                  Icons.trending_up,
-                  "বিনিয়োগ",
-                  itemBgColor,
-                  primaryTextColor,
-                ),
-                _item(Icons.restaurant, "খাবার", itemBgColor, primaryTextColor),
-                _item(
-                  Icons.shopping_bag,
-                  "কেনাকাটা",
-                  itemBgColor,
-                  primaryTextColor,
-                ),
-                _item(
-                  Icons.directions_car,
-                  "পরিবহন",
-                  itemBgColor,
-                  primaryTextColor,
-                ),
-                _item(
-                  Icons.fitness_center,
-                  "ব্যায়াম",
-                  itemBgColor,
-                  primaryTextColor,
-                ),
-                _item(Icons.home, "বাসস্থান", itemBgColor, primaryTextColor),
-                _item(Icons.savings, "সঞ্চয়", itemBgColor, primaryTextColor),
-                _item(
-                  Icons.volunteer_activism,
-                  "দান",
-                  itemBgColor,
-                  primaryTextColor,
-                ),
-                _item(Icons.payments, "বেতন", itemBgColor, primaryTextColor),
-                Column(
-                  children: [
-                    Container(
-                      height: 55,
-                      width: 55,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: handleColor),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 6,
+                mainAxisExtent: 90,
+              ),
+              itemCount: filteredCategories.length + (searchQuery.isEmpty ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index < filteredCategories.length) {
+                  final category = filteredCategories[index];
+                  return _item(
+                    category["icon"],
+                    category["name"],
+                    itemBgColor!,
+                    primaryTextColor,
+                  );
+                } else {
+                  return Column(
+                    children: [
+                      Container(
+                        height: 55,
+                        width: 55,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: handleColor),
+                        ),
+                        child: Icon(Icons.add, color: secondaryTextColor),
                       ),
-                      child: const Icon(Icons.add, color: secondaryTextColor),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      "নতুন",
-                      style: TextStyle(fontSize: 12, color: secondaryTextColor),
-                    ),
-                  ],
-                ),
-              ],
+                      const SizedBox(height: 6),
+                      Text(
+                        "নতুন",
+                        style: TextStyle(fontSize: 12, color: secondaryTextColor),
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
           ),
           Container(
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100],
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white10),
+              border: Border.all(color: isDark ? Colors.white10 : Colors.black12),
             ),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -174,10 +168,10 @@ class CategoriesBottomSheet extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(height: 4),
+                      const SizedBox(height: 4),
                       Text(
                         "আপনার নিজস্ব লেবেল এবং আইকন যোগ করুন",
-                        style: TextStyle(color: secondaryTextColor),
+                        style: TextStyle(color: secondaryTextColor, fontSize: 12),
                       ),
                     ],
                   ),
@@ -185,8 +179,8 @@ class CategoriesBottomSheet extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black,
+                    backgroundColor: isDark ? Colors.white : Colors.black,
+                    foregroundColor: isDark ? Colors.black : Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
@@ -206,7 +200,7 @@ class CategoriesBottomSheet extends StatelessWidget {
 
   Widget _item(IconData icon, String title, Color bgColor, Color textColor) {
     return GestureDetector(
-      onTap: () => onCategorySelected({"icon": icon, "name": title}),
+      onTap: () => widget.onCategorySelected({"icon": icon, "name": title}),
       child: Column(
         children: [
           Container(

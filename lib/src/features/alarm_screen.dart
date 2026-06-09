@@ -13,14 +13,11 @@ class AlarmScreen extends StatefulWidget {
   State<AlarmScreen> createState() => _AlarmScreenState();
 }
 
-class _AlarmScreenState extends State<AlarmScreen> with AutomaticKeepAliveClientMixin {
+class _AlarmScreenState extends State<AlarmScreen> {
   final NoteServicesForLocalDatabase _noteService =
       NoteServicesForLocalDatabase();
   final NotificationService _notificationService = NotificationService();
   List<NoteModel> _notes = [];
-
-  @override
-  bool get wantKeepAlive => true;
 
   final List<String> _weekDays = [
     "সোম",
@@ -274,8 +271,6 @@ class _AlarmScreenState extends State<AlarmScreen> with AutomaticKeepAliveClient
                           } else {
                             await _noteService.updateNote(newNote);
                           }
-
-                          // আগের নোটিফিকেশন ক্যানসেল করে নতুন করে সেট করা
                           await _notificationService.cancelNotification(
                             noteId.hashCode,
                           );
@@ -303,7 +298,7 @@ class _AlarmScreenState extends State<AlarmScreen> with AutomaticKeepAliveClient
                                   "এখনই সময়!",
                                   TimeOfDay.fromDateTime(finalAlarmTime),
                                   selectedRepeatDays,
-                                  soundName: "sound_alarm",
+                                soundName: "sound_alarm",
                                 );
                           }
 
@@ -333,7 +328,6 @@ class _AlarmScreenState extends State<AlarmScreen> with AutomaticKeepAliveClient
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0C0C1F) : Colors.white,

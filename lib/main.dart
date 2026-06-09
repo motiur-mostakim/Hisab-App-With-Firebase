@@ -20,7 +20,7 @@ void main() async {
   notificationService.initNotification();
   FCMService().init();
   final notes = await NoteServicesForLocalDatabase().getNotes();
-  notificationService.restoreAlarms(notes);
+ await notificationService.restoreAlarms(notes);
   runApp(const MyApp());
 }
 

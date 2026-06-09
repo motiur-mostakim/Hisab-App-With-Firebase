@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -15,21 +17,26 @@ void notificationTapBackground(NotificationResponse details) async {
     final FlutterLocalNotificationsPlugin plugin =
         FlutterLocalNotificationsPlugin();
 
+    final data = jsonDecode(details.payload ?? '{}');
+
+    final String soundName =
+        data['soundName']?.toString() ?? 'notification';
+
     await plugin.zonedSchedule(
       details.id ?? 0,
       "Reminder Again",
       "আবার মনে করিয়ে দিচ্ছি 😄",
       nextTime,
-      const NotificationDetails(
+       NotificationDetails(
         android: AndroidNotificationDetails(
           'note_alarm_channel_v9',
           'নোট অ্যালার্ম',
           importance: Importance.max,
           priority: Priority.high,
           playSound: true,
-          sound: RawResourceAndroidNotificationSound('notification'),
+          sound: RawResourceAndroidNotificationSound(soundName),
           enableVibration: true,
-          fullScreenIntent: false,
+          fullScreenIntent: true,
           category: AndroidNotificationCategory.alarm,
           visibility: NotificationVisibility.public,
           actions: <AndroidNotificationAction>[
@@ -47,6 +54,9 @@ void notificationTapBackground(NotificationResponse details) async {
           ],
         ),
       ),
+      payload: jsonEncode({
+        'soundName': soundName,
+      }),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -65,7 +75,7 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
-  Future<void> initNotification() async {
+  Future<void> initNotification({String? soundName}) async {
     tz_data.initializeTimeZones();
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -76,6 +86,10 @@ class NotificationService {
       initializationSettings,
       onDidReceiveNotificationResponse: (details) async {
         if (details.actionId == 'again_action') {
+          final data = jsonDecode(details.payload ?? '{}');
+
+          final soundName =
+              data['soundName']?.toString() ?? 'notification';
           final nextTime = tz.TZDateTime.now(
             tz.local,
           ).add(const Duration(seconds: 20));
@@ -84,6 +98,7 @@ class NotificationService {
             "Reminder Again",
             "আবার মনে করিয়ে দিচ্ছি 😄",
             nextTime,
+            soundName: soundName ?? 'notification'
           );
         }
         if (details.actionId == 'cancel_action') {
@@ -139,7 +154,7 @@ class NotificationService {
     String title,
     String body,
     DateTime scheduledDate,
-      {String soundName = 'notification',}
+      {String? soundName,}
   ) async {
     tz.TZDateTime tzScheduledDate = scheduledDate is tz.TZDateTime
         ? scheduledDate
@@ -151,7 +166,10 @@ class NotificationService {
       title,
       body,
       tzScheduledDate,
-      _notificationDetails(soundName: soundName),
+      _notificationDetails(soundName: soundName ?? 'notification'),
+      payload: jsonEncode({
+        'soundName': soundName,
+      }),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -164,7 +182,7 @@ class NotificationService {
     String body,
     TimeOfDay time,
     List<int> days,
-      {String soundName = 'notification',}
+      {String? soundName}
   ) async {
     final int baseId = id.abs();
 
@@ -176,7 +194,10 @@ class NotificationService {
         title,
         body,
         _nextInstanceOfDayAndTime(day, time),
-        _notificationDetails(soundName: soundName),
+        _notificationDetails(soundName: soundName ?? 'notification'),
+        payload: jsonEncode({
+          'soundName': soundName,
+        }),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
@@ -203,7 +224,9 @@ class NotificationService {
     return tz.TZDateTime.from(scheduledDate, tz.local);
   }
 
-  NotificationDetails _notificationDetails({String soundName = 'notification'}) {
+  NotificationDetails _notificationDetails({
+    required String soundName
+  }) {
     return NotificationDetails(
       android: AndroidNotificationDetails(
         'note_alarm_channel_v9',
@@ -213,7 +236,7 @@ class NotificationService {
         playSound: true,
         sound: RawResourceAndroidNotificationSound(soundName),
         enableVibration: true,
-        fullScreenIntent: false,
+        fullScreenIntent: true,
         category: AndroidNotificationCategory.alarm,
         visibility: NotificationVisibility.public,
         actions: <AndroidNotificationAction>[

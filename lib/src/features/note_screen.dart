@@ -64,8 +64,9 @@ class _NoteScreenState extends State<NoteScreen>
     final contentController = TextEditingController(text: note?.content);
     DateTime selectedDate = note?.createdAt ?? DateTime.now();
     DateTime? alarmTime = note?.alarmTime;
-    List<int> selectedRepeatDays =
-        note?.repeatDays != null ? List.from(note!.repeatDays!) : [];
+    List<int> selectedRepeatDays = note?.repeatDays != null
+        ? List.from(note!.repeatDays!)
+        : [];
 
     final dateController = TextEditingController(
       text: _formatOnlyDate(selectedDate),
@@ -298,8 +299,9 @@ class _NoteScreenState extends State<NoteScreen>
                       createdAt: selectedDate,
                       updatedAt: DateTime.now(),
                       alarmTime: alarmTime,
-                      repeatDays:
-                          selectedRepeatDays.isEmpty ? null : selectedRepeatDays,
+                      repeatDays: selectedRepeatDays.isEmpty
+                          ? null
+                          : selectedRepeatDays,
                     );
 
                     if (note == null) {
@@ -325,6 +327,7 @@ class _NoteScreenState extends State<NoteScreen>
                             "নোট রিমাইন্ডার: ${titleController.text}",
                             contentController.text,
                             alarmTime!,
+                            soundName: 'notification',
                           );
                         }
                       } else {
@@ -334,6 +337,7 @@ class _NoteScreenState extends State<NoteScreen>
                           contentController.text,
                           TimeOfDay.fromDateTime(alarmTime!),
                           selectedRepeatDays,
+                          soundName: 'notification',
                         );
                       }
                     } else {
@@ -387,9 +391,7 @@ class _NoteScreenState extends State<NoteScreen>
           content: TextField(
             controller: titleController,
             autofocus: true,
-            style: TextStyle(
-              color: isDark ? Colors.white : Colors.black87,
-            ),
+            style: TextStyle(color: isDark ? Colors.white : Colors.black87),
             decoration: InputDecoration(
               hintText: "কাজের নাম",
               hintStyle: const TextStyle(color: Colors.grey),
@@ -403,10 +405,7 @@ class _NoteScreenState extends State<NoteScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text(
-                "বাতিল",
-                style: TextStyle(color: Colors.grey),
-              ),
+              child: const Text("বাতিল", style: TextStyle(color: Colors.grey)),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -460,7 +459,10 @@ class _NoteScreenState extends State<NoteScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("নোট ও টাস্ক", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          "নোট ও টাস্ক",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         bottom: TabBar(
           indicatorSize: TabBarIndicatorSize.tab,
           controller: _tabController,
@@ -476,10 +478,7 @@ class _NoteScreenState extends State<NoteScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _buildNotesTab(isDark),
-          _buildTasksTab(isDark),
-        ],
+        children: [_buildNotesTab(isDark), _buildTasksTab(isDark)],
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'note_fab',
@@ -669,11 +668,19 @@ class _NoteScreenState extends State<NoteScreen>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.blueAccent, size: 20),
+                      icon: const Icon(
+                        Icons.edit,
+                        color: Colors.blueAccent,
+                        size: 20,
+                      ),
                       onPressed: () => _showTaskDialog(task: task),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+                      icon: const Icon(
+                        Icons.delete,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
                       onPressed: () => _taskService.deleteTask(task.id),
                     ),
                   ],

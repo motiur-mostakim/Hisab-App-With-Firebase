@@ -6,6 +6,7 @@ import 'package:hisab_app/main.dart';
 import 'package:hisab_app/src/features/edit_profile_screen.dart';
 import 'package:hisab_app/src/features/debt_history_screen.dart';
 import 'package:hisab_app/src/features/history_screen.dart';
+import 'package:hisab_app/src/features/prayer_schedule_screen.dart';
 import '../../core/services/transaction_service.dart';
 import 'login_screen.dart';
 
@@ -114,6 +115,16 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                 context,
                 MaterialPageRoute(
                   builder: (context) => const EditProfileScreen(),
+                ),
+              ),
+            ),
+            _menuItem(
+              Icons.mosque,
+              "নামাজের সময়সূচী",
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PrayerScheduleScreen(),
                 ),
               ),
             ),

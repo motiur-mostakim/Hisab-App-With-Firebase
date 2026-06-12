@@ -139,7 +139,7 @@ class NotificationService {
               "নোট: ${note.title}",
               note.content ?? "",
               note.alarmTime!,
-              soundName: 'notification',
+              soundName: note.soundName ?? 'notification',
             );
           }
         } else {
@@ -149,7 +149,7 @@ class NotificationService {
             note.content ?? "",
             TimeOfDay.fromDateTime(note.alarmTime!),
             note.repeatDays!,
-            soundName: 'notification',
+            soundName: note.soundName ?? 'notification',
           );
         }
       }

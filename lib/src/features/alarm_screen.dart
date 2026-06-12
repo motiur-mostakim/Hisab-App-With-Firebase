@@ -29,6 +29,14 @@ class _AlarmScreenState extends State<AlarmScreen> {
     "রবি",
   ];
 
+  final List<Map<String, String>> _ringtones = [
+    {"name": "Azan Ringtone", "value": "azan_rington"},
+    {"name": "Notification Tone", "value": "notification"},
+    {"name": "Ringtone", "value": "sound_alarm"},
+    {"name": "Natural Selection", "value": "natural_selection"},
+    {"name": "SubhanAllah Ringtone", "value": "subhan_allah_rington"},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -67,9 +75,9 @@ class _AlarmScreenState extends State<AlarmScreen> {
   void _showNoteBottomSheet({NoteModel? note}) {
     final titleController = TextEditingController(text: note?.title);
     DateTime? alarmTime = note?.alarmTime;
-    List<int> selectedRepeatDays = note?.repeatDays != null
-        ? List.from(note!.repeatDays!)
-        : [];
+    List<int> selectedRepeatDays =
+        note?.repeatDays != null ? List.from(note!.repeatDays!) : [];
+    String selectedSound = note?.soundName ?? "azan_rington";
 
     showModalBottomSheet(
       context: context,
@@ -200,6 +208,46 @@ class _AlarmScreenState extends State<AlarmScreen> {
                     const Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
+                        "রিংটোন নির্বাচন করুন:",
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white10 : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedSound,
+                          isExpanded: true,
+                          dropdownColor:
+                              isDark ? const Color(0xFF1E1E32) : Colors.white,
+                          icon: const Icon(Icons.music_note,
+                              color: Color(0xFF60DCB2)),
+                          items: _ringtones.map((ringtone) {
+                            return DropdownMenuItem<String>(
+                              value: ringtone['value'],
+                              child: Text(ringtone['name']!),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setModalState(() {
+                                selectedSound = value;
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
                         "রিপিট দিনগুলো নির্বাচন করুন:",
                         style: TextStyle(fontWeight: FontWeight.w500),
                       ),
@@ -248,7 +296,6 @@ class _AlarmScreenState extends State<AlarmScreen> {
                           elevation: 0,
                         ),
                         onPressed: () async {
-
                           final finalAlarmTime = alarmTime ?? DateTime.now();
 
                           final noteId = note?.id ?? const Uuid().v4();
@@ -264,6 +311,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
                             repeatDays: selectedRepeatDays.isEmpty
                                 ? null
                                 : selectedRepeatDays,
+                            soundName: selectedSound,
                           );
 
                           if (note == null) {
@@ -287,19 +335,19 @@ class _AlarmScreenState extends State<AlarmScreen> {
                                 "অ্যালার্ম: ${titleController.text}",
                                 "এখনই সময়!",
                                 finalAlarmTime,
-                                soundName: "azan_rington",
+                                soundName: selectedSound,
                               );
                             }
                           } else {
                             await _notificationService
                                 .scheduleWeeklyNotifications(
-                                  noteId.hashCode,
-                                  "অ্যালার্ম: ${titleController.text}",
-                                  "এখনই সময়!",
-                                  TimeOfDay.fromDateTime(finalAlarmTime),
-                                  selectedRepeatDays,
-                                soundName: "azan_rington",
-                                );
+                              noteId.hashCode,
+                              "অ্যালার্ম: ${titleController.text}",
+                              "এখনই সময়!",
+                              TimeOfDay.fromDateTime(finalAlarmTime),
+                              selectedRepeatDays,
+                              soundName: selectedSound,
+                            );
                           }
 
                           await _loadNotes();

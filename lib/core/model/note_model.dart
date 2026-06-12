@@ -9,6 +9,7 @@ class NoteModel {
   final DateTime updatedAt;
   final DateTime? alarmTime;
   final List<int>? repeatDays;
+  final String? soundName;
 
   NoteModel({
     required this.id,
@@ -19,6 +20,7 @@ class NoteModel {
     required this.updatedAt,
     this.alarmTime,
     this.repeatDays,
+    this.soundName,
   });
 
   // =========================
@@ -36,6 +38,7 @@ class NoteModel {
       'alarmTime':
       alarmTime != null ? Timestamp.fromDate(alarmTime!) : null,
       'repeatDays': repeatDays,
+      'soundName': soundName,
     };
   }
 
@@ -53,6 +56,7 @@ class NoteModel {
       repeatDays: map['repeatDays'] != null
           ? List<int>.from(map['repeatDays'])
           : null,
+      soundName: map['soundName'],
     );
   }
 
@@ -69,6 +73,7 @@ class NoteModel {
     "updatedAt": updatedAt.toIso8601String(),
     "alarmTime": alarmTime?.toIso8601String(),
     "repeatDays": repeatDays,
+    "soundName": soundName,
   };
 
   factory NoteModel.fromJson(Map<String, dynamic> json) {
@@ -85,6 +90,7 @@ class NoteModel {
       repeatDays: json["repeatDays"] != null
           ? List<int>.from(json["repeatDays"])
           : null,
+      soundName: json["soundName"],
     );
   }
 }

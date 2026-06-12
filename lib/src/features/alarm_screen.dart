@@ -287,7 +287,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
                                 "অ্যালার্ম: ${titleController.text}",
                                 "এখনই সময়!",
                                 finalAlarmTime,
-                                soundName: "sound_alarm",
+                                soundName: "azan_rington",
                               );
                             }
                           } else {
@@ -298,7 +298,7 @@ class _AlarmScreenState extends State<AlarmScreen> {
                                   "এখনই সময়!",
                                   TimeOfDay.fromDateTime(finalAlarmTime),
                                   selectedRepeatDays,
-                                soundName: "sound_alarm",
+                                soundName: "azan_rington",
                                 );
                           }
 

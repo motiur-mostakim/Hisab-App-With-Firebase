@@ -75,8 +75,9 @@ class _AlarmScreenState extends State<AlarmScreen> {
   void _showNoteBottomSheet({NoteModel? note}) {
     final titleController = TextEditingController(text: note?.title);
     DateTime? alarmTime = note?.alarmTime;
-    List<int> selectedRepeatDays =
-        note?.repeatDays != null ? List.from(note!.repeatDays!) : [];
+    List<int> selectedRepeatDays = note?.repeatDays != null
+        ? List.from(note!.repeatDays!)
+        : [];
     String selectedSound = note?.soundName ?? "azan_rington";
 
     showModalBottomSheet(
@@ -223,10 +224,13 @@ class _AlarmScreenState extends State<AlarmScreen> {
                         child: DropdownButton<String>(
                           value: selectedSound,
                           isExpanded: true,
-                          dropdownColor:
-                              isDark ? const Color(0xFF1E1E32) : Colors.white,
-                          icon: const Icon(Icons.music_note,
-                              color: Color(0xFF60DCB2)),
+                          dropdownColor: isDark
+                              ? const Color(0xFF1E1E32)
+                              : Colors.white,
+                          icon: const Icon(
+                            Icons.music_note,
+                            color: Color(0xFF60DCB2),
+                          ),
                           items: _ringtones.map((ringtone) {
                             return DropdownMenuItem<String>(
                               value: ringtone['value'],
@@ -341,13 +345,13 @@ class _AlarmScreenState extends State<AlarmScreen> {
                           } else {
                             await _notificationService
                                 .scheduleWeeklyNotifications(
-                              noteId.hashCode,
-                              "অ্যালার্ম: ${titleController.text}",
-                              "এখনই সময়!",
-                              TimeOfDay.fromDateTime(finalAlarmTime),
-                              selectedRepeatDays,
-                              soundName: selectedSound,
-                            );
+                                  noteId.hashCode,
+                                  "অ্যালার্ম: ${titleController.text}",
+                                  "এখনই সময়!",
+                                  TimeOfDay.fromDateTime(finalAlarmTime),
+                                  selectedRepeatDays,
+                                  soundName: selectedSound,
+                                );
                           }
 
                           await _loadNotes();

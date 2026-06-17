@@ -50,8 +50,7 @@ void notificationTapBackground(NotificationResponse details) async {
 
     final data = jsonDecode(details.payload ?? '{}');
 
-    final String soundName =
-        data['soundName']?.toString() ?? 'notification';
+    final String soundName = data['soundName']?.toString() ?? 'notification';
 
     await plugin.zonedSchedule(
       details.id ?? 0,
@@ -59,9 +58,7 @@ void notificationTapBackground(NotificationResponse details) async {
       "আবার মনে করিয়ে দিচ্ছি 😄",
       nextTime,
       _getNotificationDetails(soundName),
-      payload: jsonEncode({
-        'soundName': soundName,
-      }),
+      payload: jsonEncode({'soundName': soundName}),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -93,8 +90,7 @@ class NotificationService {
         if (details.actionId == 'again_action') {
           final data = jsonDecode(details.payload ?? '{}');
 
-          final soundName =
-              data['soundName']?.toString() ?? 'notification';
+          final soundName = data['soundName']?.toString() ?? 'notification';
           final nextTime = tz.TZDateTime.now(
             tz.local,
           ).add(const Duration(seconds: 20));
@@ -103,7 +99,7 @@ class NotificationService {
             "Reminder Again",
             "আবার মনে করিয়ে দিচ্ছি 😄",
             nextTime,
-            soundName: soundName
+            soundName: soundName,
           );
         }
         if (details.actionId == 'cancel_action') {
@@ -160,9 +156,9 @@ class NotificationService {
     int id,
     String title,
     String body,
-    DateTime scheduledDate,
-      {String? soundName,}
-  ) async {
+    DateTime scheduledDate, {
+    String? soundName,
+  }) async {
     tz.TZDateTime tzScheduledDate = scheduledDate is tz.TZDateTime
         ? scheduledDate
         : tz.TZDateTime.from(scheduledDate, tz.local);
@@ -174,9 +170,7 @@ class NotificationService {
       body,
       tzScheduledDate,
       _getNotificationDetails(soundName ?? 'notification'),
-      payload: jsonEncode({
-        'soundName': soundName ?? 'notification',
-      }),
+      payload: jsonEncode({'soundName': soundName ?? 'notification'}),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
@@ -188,9 +182,9 @@ class NotificationService {
     String title,
     String body,
     TimeOfDay time,
-    List<int> days,
-      {String? soundName}
-  ) async {
+    List<int> days, {
+    String? soundName,
+  }) async {
     final int baseId = id.abs();
 
     for (int day in days) {
@@ -202,9 +196,7 @@ class NotificationService {
         body,
         _nextInstanceOfDayAndTime(day, time),
         _getNotificationDetails(soundName ?? 'notification'),
-        payload: jsonEncode({
-          'soundName': soundName ?? 'notification',
-        }),
+        payload: jsonEncode({'soundName': soundName ?? 'notification'}),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,

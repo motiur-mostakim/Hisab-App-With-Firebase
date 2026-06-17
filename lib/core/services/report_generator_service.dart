@@ -17,12 +17,16 @@ class ReportGeneratorService {
   }) async {
     final pdf = pw.Document();
 
-    final fontData = await rootBundle.load("assets/fonts/static/NotoSansBengali-Regular.ttf");
+    final fontData = await rootBundle.load(
+      "assets/fonts/static/NotoSansBengali-Regular.ttf",
+    );
     final ttfRegular = pw.Font.ttf(fontData);
 
     pw.Font ttfBold;
     try {
-      final boldFontData = await rootBundle.load("assets/fonts/static/NotoSansBengali-Bold.ttf");
+      final boldFontData = await rootBundle.load(
+        "assets/fonts/static/NotoSansBengali-Bold.ttf",
+      );
       ttfBold = pw.Font.ttf(boldFontData);
     } catch (e) {
       ttfBold = ttfRegular;
@@ -31,17 +35,15 @@ class ReportGeneratorService {
     final currencyFormat = NumberFormat('#,##0.00', 'en_US');
 
     final directory = await getTemporaryDirectory();
-    final fileName = 'Hisab_Report_${DateTime.now().millisecondsSinceEpoch}.pdf';
+    final fileName =
+        'Hisab_Report_${DateTime.now().millisecondsSinceEpoch}.pdf';
     final file = File('${directory.path}/$fileName');
 
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(40),
-        theme: pw.ThemeData.withFont(
-          base: ttfRegular,
-          bold: ttfBold,
-        ),
+        theme: pw.ThemeData.withFont(base: ttfRegular, bold: ttfBold),
         build: (context) => [
           pw.Header(
             level: 0,
@@ -61,57 +63,85 @@ class ReportGeneratorService {
             style: pw.TextStyle(font: ttfRegular, fontSize: 12),
           ),
           pw.Paragraph(
-            text: 'তারিখ / Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
+            text:
+                'তারিখ / Date: ${DateFormat('yyyy-MM-dd').format(DateTime.now())}',
             style: pw.TextStyle(font: ttfRegular, fontSize: 12),
           ),
           pw.Divider(),
           pw.SizedBox(height: 10),
-          
+
           pw.Text(
             'সারসংক্ষেপ / Summary',
-            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, font: ttfBold),
+            style: pw.TextStyle(
+              fontSize: 18,
+              fontWeight: pw.FontWeight.bold,
+              font: ttfBold,
+            ),
           ),
           pw.SizedBox(height: 10),
           pw.Bullet(
-            text: 'মোট আয় / Total Income: BDT ${currencyFormat.format(totalIncome)}',
+            text:
+                'মোট আয় / Total Income: BDT ${currencyFormat.format(totalIncome)}',
             style: pw.TextStyle(font: ttfRegular),
           ),
           pw.Bullet(
-            text: 'মোট ব্যয় / Total Expense: BDT ${currencyFormat.format(totalExpense)}',
+            text:
+                'মোট ব্যয় / Total Expense: BDT ${currencyFormat.format(totalExpense)}',
             style: pw.TextStyle(font: ttfRegular),
           ),
           pw.Bullet(
-            text: 'নিট ব্যালেন্স / Net Balance: BDT ${currencyFormat.format(netWorth)}',
+            text:
+                'নিট ব্যালেন্স / Net Balance: BDT ${currencyFormat.format(netWorth)}',
             style: pw.TextStyle(font: ttfRegular),
           ),
-          
+
           pw.SizedBox(height: 25),
           pw.Text(
             'লেনদেন সমূহ / Transactions',
-            style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold, font: ttfBold),
+            style: pw.TextStyle(
+              fontSize: 18,
+              fontWeight: pw.FontWeight.bold,
+              font: ttfBold,
+            ),
           ),
           pw.SizedBox(height: 10),
-          
+
           pw.TableHelper.fromTextArray(
             headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
-            headers: ['তারিখ (Date)', 'বিভাগ (Category)', 'ধরন (Type)', 'পরিমাণ (Amount)'],
-            data: transactions.map((t) => [
-              DateFormat('yyyy-MM-dd').format(t.transactionDate),
-              t.category ?? 'অন্যান্য',
-              t.type == 'income' ? 'আয় (Income)' : 'ব্যয় (Expense)',
-              currencyFormat.format(t.amount)
-            ]).toList(),
-            headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, font: ttfBold),
+            headers: [
+              'তারিখ (Date)',
+              'বিভাগ (Category)',
+              'ধরন (Type)',
+              'পরিমাণ (Amount)',
+            ],
+            data: transactions
+                .map(
+                  (t) => [
+                    DateFormat('yyyy-MM-dd').format(t.transactionDate),
+                    t.category ?? 'অন্যান্য',
+                    t.type == 'income' ? 'আয় (Income)' : 'ব্যয় (Expense)',
+                    currencyFormat.format(t.amount),
+                  ],
+                )
+                .toList(),
+            headerStyle: pw.TextStyle(
+              fontWeight: pw.FontWeight.bold,
+              font: ttfBold,
+            ),
             cellStyle: pw.TextStyle(font: ttfRegular),
             cellAlignment: pw.Alignment.centerLeft,
             headerAlignment: pw.Alignment.centerLeft,
           ),
-          
+
           pw.Footer(
             margin: const pw.EdgeInsets.only(top: 20),
             trailing: pw.Text(
               'Generated by Hisab App',
-              style: pw.TextStyle(fontSize: 10, color: PdfColors.grey, font: ttfRegular),
+              style: pw.TextStyle(
+                fontSize: 10,
+                color: PdfColors.grey,
+                font: ttfRegular,
+              ),
             ),
           ),
         ],

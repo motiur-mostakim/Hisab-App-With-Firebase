@@ -18,7 +18,8 @@ class ReportScreen extends StatefulWidget {
   State<ReportScreen> createState() => _ReportScreenState();
 }
 
-class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClientMixin {
+class _ReportScreenState extends State<ReportScreen>
+    with AutomaticKeepAliveClientMixin {
   final TransactionService _transactionService = TransactionService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final ReportGeneratorService _reportGenerator = ReportGeneratorService();
@@ -29,9 +30,7 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
   bool get wantKeepAlive => true;
 
   // PDF ডাউনলোড এবং ফাইল সেভ করার method
-  Future<void> _downloadPdfReport(
-      List<TransactionModel> transactions,
-      ) async {
+  Future<void> _downloadPdfReport(List<TransactionModel> transactions) async {
     try {
       setState(() => _isGeneratingPdf = true);
 
@@ -39,8 +38,7 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
 
       final stats = _calculateStats(filteredTransactions);
 
-      final categoryTotals =
-      _getCategoryTotals(filteredTransactions, true);
+      final categoryTotals = _getCategoryTotals(filteredTransactions, true);
 
       final pdfFile = await _reportGenerator.generatePdfReport(
         transactions: filteredTransactions,
@@ -60,8 +58,7 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
       final fileName =
           'Hisab_Report_${DateTime.now().millisecondsSinceEpoch}.pdf';
 
-      final finalPath =
-      uniqueFilePath(downloadsDir.path, fileName);
+      final finalPath = uniqueFilePath(downloadsDir.path, fileName);
 
       final newFile = await pdfFile.copy(finalPath);
 
@@ -85,10 +82,9 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
       // Android এর জন্য Intent ব্যবহার করুন
       if (Platform.isAndroid) {
         // File manager খুলতে share ব্যবহার করি
-        await Share.shareXFiles(
-          [XFile(filePath)],
-          text: 'আর্থিক রিপোর্ট ডাউনলোড হয়েছে',
-        );
+        await Share.shareXFiles([
+          XFile(filePath),
+        ], text: 'আর্থিক রিপোর্ট ডাউনলোড হয়েছে');
       }
     } catch (e) {
       print('File manager খোলার error: $e');
@@ -118,10 +114,9 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
 
       if (mounted) {
         // Share sheet ব্যবহার করে email এ পাঠান
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          text: 'আমার আর্থিক রিপোর্ট ($_reportType)',
-        );
+        await Share.shareXFiles([
+          XFile(file.path),
+        ], text: 'আমার আর্থিক রিপোর্ট ($_reportType)');
         _showSnackbar('রিপোর্ট শেয়ার করার জন্য প্রস্তুত');
       }
     } catch (e) {
@@ -141,7 +136,8 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
       String csvContent = 'তারিখ,বিভাগ,বিবরণ,ধরন,পরিমাণ\n';
 
       for (var txn in filteredTransactions) {
-        final date = '${txn.transactionDate.year}-${txn.transactionDate.month.toString().padLeft(2, '0')}-${txn.transactionDate.day.toString().padLeft(2, '0')}';
+        final date =
+            '${txn.transactionDate.year}-${txn.transactionDate.month.toString().padLeft(2, '0')}-${txn.transactionDate.day.toString().padLeft(2, '0')}';
         final category = txn.category ?? 'অন্যান্য';
         final type = txn.type == 'income' ? 'আয়' : 'ব্যয়';
         final note = txn.note ?? 'No description';
@@ -149,8 +145,10 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
       }
 
       // File save করুন
-      final directory = await getDownloadsDirectory() ?? await getTemporaryDirectory();
-      final fileName = 'Hisab_Report_${DateTime.now().millisecondsSinceEpoch}.csv';
+      final directory =
+          await getDownloadsDirectory() ?? await getTemporaryDirectory();
+      final fileName =
+          'Hisab_Report_${DateTime.now().millisecondsSinceEpoch}.csv';
       final file = File('${directory.path}/$fileName');
       await file.writeAsString(csvContent, encoding: utf8);
       print("Directory: ${directory.path}");
@@ -159,10 +157,9 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
       if (mounted) {
         _showSnackbar('CSV রিপোর্ট ডাউনলোড হয়েছে: ${file.path}');
         // Share করুন
-        await Share.shareXFiles(
-          [XFile(file.path)],
-          text: 'আর্থিক রিপোর্ট (CSV)',
-        );
+        await Share.shareXFiles([
+          XFile(file.path),
+        ], text: 'আর্থিক রিপোর্ট (CSV)');
       }
     } catch (e) {
       setState(() => _isGeneratingPdf = false);
@@ -189,7 +186,9 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
   ) {
     final categoryTotals = <String, double>{};
     for (var txn in transactions) {
-      final matchesType = (isExpense && txn.type == 'expense') || (!isExpense && txn.type == 'income');
+      final matchesType =
+          (isExpense && txn.type == 'expense') ||
+          (!isExpense && txn.type == 'income');
       if (matchesType) {
         final cat = txn.category ?? 'অন্যান্য';
         categoryTotals[cat] = (categoryTotals[cat] ?? 0) + txn.amount;
@@ -208,13 +207,17 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
     if (_reportType == "মাসিক") {
       return transactions
           .where(
-            (txn) => txn.transactionDate.isAfter(monthStart.subtract(const Duration(days: 1))),
+            (txn) => txn.transactionDate.isAfter(
+              monthStart.subtract(const Duration(days: 1)),
+            ),
           )
           .toList();
     } else {
       return transactions
           .where(
-            (txn) => txn.transactionDate.isAfter(yearStart.subtract(const Duration(days: 1))),
+            (txn) => txn.transactionDate.isAfter(
+              yearStart.subtract(const Duration(days: 1)),
+            ),
           )
           .toList();
     }
@@ -250,10 +253,17 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
                   }
 
                   final allTransactions = snapshot.data!;
-                  final filteredTransactions = _filterByReportType(allTransactions);
-                  final netWorth = DashboardCalculations.calculateNetWorth(allTransactions);
+                  final filteredTransactions = _filterByReportType(
+                    allTransactions,
+                  );
+                  final netWorth = DashboardCalculations.calculateNetWorth(
+                    allTransactions,
+                  );
                   final stats = _calculateStats(filteredTransactions);
-                  final categoryTotals = _getCategoryTotals(filteredTransactions, true);
+                  final categoryTotals = _getCategoryTotals(
+                    filteredTransactions,
+                    true,
+                  );
 
                   return SingleChildScrollView(
                     padding: const EdgeInsets.all(16),
@@ -368,7 +378,11 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
                   color: Colors.white.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.account_balance, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.account_balance,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ],
           ),
@@ -406,7 +420,10 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
             const Spacer(),
             IconButton(
               onPressed: () {}, // Share functionality
-              icon: Icon(Icons.share, color: isDark ? Colors.white70 : Colors.black54),
+              icon: Icon(
+                Icons.share,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
             ),
           ],
         ),
@@ -469,8 +486,12 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
             crossAxisAlignment: CrossAxisAlignment.end,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: monthlyData.entries.map((entry) {
-              final incomeHeight = maxAmount > 0 ? (entry.value['income']! / maxAmount) * 120 : 0.0;
-              final expenseHeight = maxAmount > 0 ? (entry.value['expense']! / maxAmount) * 120 : 0.0;
+              final incomeHeight = maxAmount > 0
+                  ? (entry.value['income']! / maxAmount) * 120
+                  : 0.0;
+              final expenseHeight = maxAmount > 0
+                  ? (entry.value['expense']! / maxAmount) * 120
+                  : 0.0;
 
               return Column(
                 children: [
@@ -482,7 +503,9 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
                         height: incomeHeight + 5,
                         decoration: BoxDecoration(
                           color: const Color(0xFF60DCB2),
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -491,7 +514,9 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
                         height: expenseHeight + 5,
                         decoration: BoxDecoration(
                           color: Colors.redAccent.withOpacity(0.8),
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
+                          ),
                         ),
                       ),
                     ],
@@ -528,7 +553,10 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
         Container(
           width: 12,
           height: 12,
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
         const SizedBox(width: 6),
         Text(
@@ -542,7 +570,9 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
     );
   }
 
-  Map<String, Map<String, double>> _getMonthlyHistory(List<TransactionModel> transactions) {
+  Map<String, Map<String, double>> _getMonthlyHistory(
+    List<TransactionModel> transactions,
+  ) {
     final Map<String, Map<String, double>> history = {};
     final now = DateTime.now();
 
@@ -558,9 +588,11 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
       final monthName = _getMonthName(date.month);
       if (history.containsKey(monthName)) {
         if (txn.type == 'income') {
-          history[monthName]!['income'] = (history[monthName]!['income'] ?? 0) + txn.amount;
+          history[monthName]!['income'] =
+              (history[monthName]!['income'] ?? 0) + txn.amount;
         } else if (txn.type == 'expense') {
-          history[monthName]!['expense'] = (history[monthName]!['expense'] ?? 0) + txn.amount;
+          history[monthName]!['expense'] =
+              (history[monthName]!['expense'] ?? 0) + txn.amount;
         }
       }
     }
@@ -568,7 +600,20 @@ class _ReportScreenState extends State<ReportScreen> with AutomaticKeepAliveClie
   }
 
   String _getMonthName(int month) {
-    const names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const names = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     return names[month - 1];
   }
 

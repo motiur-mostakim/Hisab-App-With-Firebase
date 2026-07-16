@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../../core/model/transaction_model.dart';
 import '../../core/services/transaction_service.dart';
 
@@ -10,8 +11,9 @@ class DebtHistoryScreen extends StatefulWidget {
 }
 
 class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
-  bool? showOwedToMe;
+  String? activeFilter; // 'receivable', 'payable', 'settled'
   final TransactionService _transactionService = TransactionService();
+  final Set<String> _settlingPersons = {}; // বর্তমানে সেটেল হচ্ছে এমন ব্যক্তিদের নাম
 
   Future<void> _deleteTransaction(TransactionModel txn) async {
     final confirmed = await showDialog<bool>(
@@ -45,6 +47,65 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
     }
   }
 
+  Future<void> _settleFullBalance(_PersonDebtInfo info, bool isReceivable) async {
+    if (info.amount <= 0 || _settlingPersons.contains(info.name)) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("পরিশোধ নিশ্চিত করুন"),
+        content: Text(
+          isReceivable
+              ? "${info.name}-এর থেকে সব পাওনা (৳${info.amount.toStringAsFixed(0)}) কি ফেরত পেয়েছেন?"
+              : "${info.name}-কে সব দেনা (৳${info.amount.toStringAsFixed(0)}) কি পরিশোধ করেছেন?",
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("না")),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.green),
+            child: const Text("হ্যাঁ, হয়েছে"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() => _settlingPersons.add(info.name));
+      try {
+        final settlement = TransactionModel(
+          id: const Uuid().v4(),
+          userId: info.transactions.first.userId,
+          amount: info.amount,
+          type: isReceivable ? 'loan_collected' : 'loan_repaid',
+          category: 'ধার/বাকি',
+          personId: info.name,
+          note: "পুরো হিসাব পরিশোধিত",
+          transactionDate: DateTime.now(),
+          createdAt: DateTime.now(),
+        );
+
+        await _transactionService.addTransaction(settlement);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("হিসাব মিটিয়ে ফেলা হয়েছে এবং ইতিহাসে যোগ হয়েছে")),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("ত্রুটি: $e")),
+          );
+        }
+      } finally {
+        // স্ট্রিম আপডেট হতে সময় লাগলে বাটনটি যাতে ডিজেবল থাকে, তাই সাথে সাথে রিমুভ করছি না
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) setState(() => _settlingPersons.remove(info.name));
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -69,6 +130,7 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
           if (allDebts.isEmpty) {
             return _buildEmptyState();
           }
+
           final Map<String, List<TransactionModel>> personGrouped = {};
           final Map<String, double> personBalances = {};
           final Map<String, String> displayNameMap = {};
@@ -85,7 +147,8 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
               displayNameMap[normalizedName] = rawName;
             }
             personGrouped[normalizedName]!.add(txn);
-             double delta = 0;
+            
+            double delta = 0;
             if (txn.type == 'loan_given') delta = txn.amount;
             if (txn.type == 'loan_collected') delta = -txn.amount;
             if (txn.type == 'loan_taken') delta = -txn.amount;
@@ -96,27 +159,28 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
 
           final List<_PersonDebtInfo> iWillGet = [];
           final List<_PersonDebtInfo> iWillGive = [];
+          final List<_PersonDebtInfo> iSettled = [];
 
           personBalances.forEach((normalizedName, balance) {
+            final info = _PersonDebtInfo(
+              name: displayNameMap[normalizedName]!,
+              amount: balance.abs(),
+              transactions: personGrouped[normalizedName]!
+                ..sort((a, b) => b.transactionDate.compareTo(a.transactionDate)),
+            );
+
             if (balance.abs() >= 1.0) {
-              final info = _PersonDebtInfo(
-                name: displayNameMap[normalizedName]!,
-                amount: balance.abs(),
-                transactions: personGrouped[normalizedName]!
-                  ..sort((a, b) => b.transactionDate.compareTo(a.transactionDate)),
-              );
               if (balance > 0) {
                 iWillGet.add(info);
               } else {
                 iWillGive.add(info);
               }
+            } else {
+              iSettled.add(info);
             }
           });
 
-          double netOwedToMe = iWillGet.fold(
-            0,
-            (sum, item) => sum + item.amount,
-          );
+          double netOwedToMe = iWillGet.fold(0, (sum, item) => sum + item.amount);
           double netIOwe = iWillGive.fold(0, (sum, item) => sum + item.amount);
 
           return Column(
@@ -126,26 +190,31 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                 child: Row(
                   children: [
                     _buildSummaryCard(
-                      "মোট পাওনা",
+                      "পাওনা",
                       netOwedToMe,
                       Colors.green,
                       isDark,
-                      showOwedToMe == true,
-                      () => setState(
-                        () => showOwedToMe = showOwedToMe == true ? null : true,
-                      ),
+                      activeFilter == 'receivable',
+                      () => setState(() => activeFilter = activeFilter == 'receivable' ? null : 'receivable'),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     _buildSummaryCard(
-                      "মোট দেনা",
+                      "দেনা",
                       netIOwe,
                       Colors.red,
                       isDark,
-                      showOwedToMe == false,
-                      () => setState(
-                        () =>
-                            showOwedToMe = showOwedToMe == false ? null : false,
-                      ),
+                      activeFilter == 'payable',
+                      () => setState(() => activeFilter = activeFilter == 'payable' ? null : 'payable'),
+                    ),
+                    const SizedBox(width: 8),
+                    _buildSummaryCard(
+                      "ইতিহাস",
+                      iSettled.length.toDouble(),
+                      Colors.blueGrey,
+                      isDark,
+                      activeFilter == 'settled',
+                      () => setState(() => activeFilter = activeFilter == 'settled' ? null : 'settled'),
+                      isCount: true,
                     ),
                   ],
                 ),
@@ -155,55 +224,47 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                 child: ListView(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   children: [
-                    if (showOwedToMe == null || showOwedToMe == true) ...[
+                    if (activeFilter == null || activeFilter == 'receivable') ...[
                       if (iWillGet.isNotEmpty) ...[
-                        _buildSectionHeader(
-                          "পাওনা তালিকা (আমি পাব)",
-                          Colors.green,
-                        ),
-                        ...iWillGet.map(
-                          (info) =>
-                              _buildPersonCard(info, Colors.green, isDark),
-                        ),
-                      ] else if (showOwedToMe == true)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(20.0),
-                            child: Text(
-                              "কোনো পাওনা নেই",
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ),
-                        ),
+                        _buildSectionHeader("পাওনা তালিকা (আমি পাব)", Colors.green),
+                        ...iWillGet.map((info) => _buildPersonCard(info, Colors.green, isDark)),
+                      ] else if (activeFilter == 'receivable')
+                        _buildNoDataMessage("কোনো পাওনা নেই"),
                     ],
-                    if (showOwedToMe == null || showOwedToMe == false) ...[
+                    
+                    if (activeFilter == null || activeFilter == 'payable') ...[
                       if (iWillGive.isNotEmpty) ...[
                         const SizedBox(height: 16),
-                        _buildSectionHeader(
-                          "দেনা তালিকা (আমি দেব)",
-                          Colors.red,
-                        ),
-                        ...iWillGive.map(
-                          (info) => _buildPersonCard(info, Colors.red, isDark),
-                        ),
-                      ] else if (showOwedToMe == false)
-                        const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(20.0),
-                            child: Text(
-                              "কোনো দেনা নেই",
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ),
-                        ),
+                        _buildSectionHeader("দেনা তালিকা (আমি দেব)", Colors.red),
+                        ...iWillGive.map((info) => _buildPersonCard(info, Colors.red, isDark)),
+                      ] else if (activeFilter == 'payable')
+                        _buildNoDataMessage("কোনো দেনা নেই"),
                     ],
-                    const SizedBox(height: 20),
+
+                    if (activeFilter == null || activeFilter == 'settled') ...[
+                      if (iSettled.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        _buildSectionHeader("পরিশোধিত হিসাব (ইতিহাস)", Colors.blueGrey),
+                        ...iSettled.map((info) => _buildPersonCard(info, Colors.blueGrey, isDark, isHistory: true)),
+                      ] else if (activeFilter == 'settled')
+                        _buildNoDataMessage("কোনো পরিশোধিত হিসাব নেই"),
+                    ],
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildNoDataMessage(String msg) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Text(msg, style: const TextStyle(color: Colors.grey)),
       ),
     );
   }
@@ -216,19 +277,12 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
           Container(
             width: 4,
             height: 18,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(2),
-            ),
+            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(width: 8),
           Text(
             title,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14),
           ),
         ],
       ),
@@ -237,29 +291,24 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
 
   Widget _buildSummaryCard(
     String title,
-    double amount,
+    double value,
     Color color,
     bool isDark,
     bool isActive,
-    VoidCallback onTap,
-  ) {
-    final bool isZero = amount < 1;
-
+    VoidCallback onTap, {
+    bool isCount = false,
+  }) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 20),
+          padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isActive
-                ? color.withOpacity(0.1)
-                : (isDark ? const Color(0xFF1E1E32) : Colors.grey[100]),
-            borderRadius: BorderRadius.circular(20),
+            color: isActive ? color.withOpacity(0.1) : (isDark ? const Color(0xFF1E1E32) : Colors.grey[100]),
+            borderRadius: BorderRadius.circular(15),
             border: Border.all(
-              color: isActive
-                  ? color.withOpacity(0.5)
-                  : (isDark ? Colors.white10 : Colors.transparent),
-              width: 2,
+              color: isActive ? color : (isDark ? Colors.white10 : Colors.transparent),
+              width: 1.5,
             ),
           ),
           child: Column(
@@ -268,24 +317,19 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
                 title,
                 style: TextStyle(
                   color: isActive ? color : Colors.grey,
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
-                "৳${amount.toStringAsFixed(0)}",
+                isCount ? value.toInt().toString() : "৳${value.toStringAsFixed(0)}",
                 style: TextStyle(
-                  color: isZero
-                      ? Colors.grey
-                      : (isActive
-                            ? color
-                            : (isDark ? Colors.white : Colors.black87)),
-                  fontSize: 20,
+                  color: isActive ? color : (isDark ? Colors.white : Colors.black87),
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              if (isActive) Icon(Icons.check_circle, color: color, size: 16),
             ],
           ),
         ),
@@ -293,7 +337,9 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
     );
   }
 
-  Widget _buildPersonCard(_PersonDebtInfo info, Color color, bool isDark) {
+  Widget _buildPersonCard(_PersonDebtInfo info, Color color, bool isDark, {bool isHistory = false}) {
+    final bool isSettling = _settlingPersons.contains(info.name);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
@@ -307,70 +353,61 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
         leading: CircleAvatar(
           backgroundColor: color.withOpacity(0.1),
           child: Text(
-            info.name[0].toUpperCase(),
+            info.name.isNotEmpty ? info.name[0].toUpperCase() : "?",
             style: TextStyle(color: color, fontWeight: FontWeight.bold),
           ),
         ),
-        title: Text(
-          info.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text(info.name, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text("${info.transactions.length} টি লেনদেন"),
-        trailing: Text(
-          "৳${info.amount.toStringAsFixed(0)}",
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-          ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              "৳${info.amount.toStringAsFixed(0)}",
+              style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            if (!isHistory) ...[
+              const SizedBox(width: 8),
+              if (isSettling)
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.green),
+                )
+              else
+                IconButton(
+                  icon: const Icon(Icons.check_circle, color: Colors.green, size: 24),
+                  onPressed: () => _settleFullBalance(info, color == Colors.green),
+                  tooltip: "পুরো হিসাব মিটিয়ে ফেলুন",
+                ),
+            ],
+          ],
         ),
-        children: info.transactions
-            .map(
-              (t) {
-                final bool iGave = (t.type == 'loan_given' || t.type == 'loan_repaid');
-                final leadingIcon = iGave ? Icons.arrow_upward : Icons.arrow_downward;
-                final leadingColor = iGave ? Colors.green : Colors.red;
-                final titleText = iGave ? "দিয়েছি / পরিশোধ" : "নিয়েছি / ফেরত";
+        children: info.transactions.map((t) {
+          final bool iGave = (t.type == 'loan_given' || t.type == 'loan_repaid');
+          final leadingColor = iGave ? Colors.green : Colors.red;
+          final titleText = iGave ? (t.type == 'loan_given' ? "ধারি দিয়েছি" : "পরিশোধ করেছি") 
+                                  : (t.type == 'loan_taken' ? "ধারি নিয়েছি" : "ফেরত পেয়েছি");
 
-                return ListTile(
-                  dense: true,
-                  leading: Icon(
-                    leadingIcon,
-                    color: leadingColor,
-                    size: 16,
-                  ),
-                  title: Text(
-                    titleText,
-                    style: const TextStyle(fontSize: 13),
-                  ),
-                  subtitle: Text("${t.transactionDate.day}/${t.transactionDate.month}/${t.transactionDate.year}"),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        "৳${t.amount.toStringAsFixed(0)}",
-                        style: TextStyle(
-                          color: leadingColor,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.redAccent,
-                          size: 20,
-                        ),
-                        onPressed: () => _deleteTransaction(t),
-                        tooltip: "মুছে ফেলুন",
-                      ),
-                    ],
-                  ),
-                );
-              },
-            )
-            .toList(),
+          return ListTile(
+            dense: true,
+            leading: Icon(iGave ? Icons.arrow_upward : Icons.arrow_downward, color: leadingColor, size: 16),
+            title: Text(titleText, style: const TextStyle(fontSize: 13)),
+            subtitle: Text("${t.transactionDate.day}/${t.transactionDate.month}/${t.transactionDate.year}"),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("৳${t.amount.toStringAsFixed(0)}", 
+                  style: TextStyle(color: leadingColor, fontWeight: FontWeight.w600)),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 18),
+                  onPressed: () => _deleteTransaction(t),
+                  tooltip: "মুছে ফেলুন",
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -380,16 +417,9 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.handshake_outlined,
-            size: 80,
-            color: Colors.grey.withOpacity(0.3),
-          ),
+          Icon(Icons.handshake_outlined, size: 80, color: Colors.grey.withOpacity(0.3)),
           const SizedBox(height: 16),
-          const Text(
-            "কোনো ধারের হিসাব নেই",
-            style: TextStyle(color: Colors.grey),
-          ),
+          const Text("কোনো ধারের হিসাব নেই", style: TextStyle(color: Colors.grey)),
         ],
       ),
     );
@@ -400,10 +430,5 @@ class _PersonDebtInfo {
   final String name;
   final double amount;
   final List<TransactionModel> transactions;
-
-  _PersonDebtInfo({
-    required this.name,
-    required this.amount,
-    required this.transactions,
-  });
+  _PersonDebtInfo({required this.name, required this.amount, required this.transactions});
 }

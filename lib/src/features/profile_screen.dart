@@ -7,6 +7,7 @@ import 'package:hisab_app/src/features/edit_profile_screen.dart';
 import 'package:hisab_app/src/features/debt_history_screen.dart';
 import 'package:hisab_app/src/features/history_screen.dart';
 import 'package:hisab_app/src/features/prayer_schedule_screen.dart';
+import 'package:hisab_app/src/features/notification_screen.dart';
 import '../../core/services/transaction_service.dart';
 import 'login_screen.dart';
 
@@ -71,7 +72,8 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                   child: CircleAvatar(
                     radius: 55,
                     backgroundImage: NetworkImage(
-                      auth.currentUser?.photoURL ?? "https://lh3.googleusercontent.com/a/ACg8ocIxFdhaqwmoBefje8HCKUATauYQpeQyecV7wZCCyQbvLOXMk8lHKA=s432-c-no",
+                      auth.currentUser?.photoURL ??
+                          "https://lh3.googleusercontent.com/a/ACg8ocIxFdhaqwmoBefje8HCKUATauYQpeQyecV7wZCCyQbvLOXMk8lHKA=s432-c-no",
                     ),
                   ),
                 ),
@@ -148,8 +150,16 @@ class _ProfileScreenState extends State<ProfileScreen> with AutomaticKeepAliveCl
                 ),
               ),
             ),
-            _menuItem(Icons.notifications, "নোটিফিকেশন"),
-            _menuItem(Icons.payment, "মুদ্রা সেটিংস", trailing: "BDT"),
+            _menuItem(
+              Icons.notifications,
+              "নোটিফিকেশন",
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationScreen(),
+                ),
+              ),
+            ),
             _menuItem(Icons.lock, "নিরাপত্তা"),
             const SizedBox(height: 10),
             ValueListenableBuilder<ThemeMode>(

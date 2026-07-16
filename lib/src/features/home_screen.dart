@@ -85,8 +85,6 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
     );
   }
-
-  // বাজেট সেট করার ডায়ালগ
   void _showSetBudgetDialog(double currentBudget) {
     final controller = TextEditingController(
       text: currentBudget == 0 ? "" : currentBudget.toString(),
@@ -241,8 +239,6 @@ class _DashboardScreenState extends State<DashboardScreen>
               ],
             ),
             const SizedBox(height: 16),
-
-            // ডাইনামিক বাজেট সেকশন
             StreamBuilder<double>(
               stream: _transactionService.getBudget(),
               builder: (context, budgetSnapshot) {

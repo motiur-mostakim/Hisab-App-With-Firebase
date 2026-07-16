@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:hisab_app/core/services/note_services_for_local_database.dart';
 import 'package:hisab_app/core/services/notification_service.dart';
 import 'package:hisab_app/core/widgets/auth_check.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'core/services/FCM_services.dart';
 import 'firebase_options.dart';
 import 'src/features/login_screen.dart';

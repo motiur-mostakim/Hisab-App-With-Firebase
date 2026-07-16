@@ -13,7 +13,7 @@ class DebtHistoryScreen extends StatefulWidget {
 class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
   String? activeFilter; // 'receivable', 'payable', 'settled'
   final TransactionService _transactionService = TransactionService();
-  final Set<String> _settlingPersons = {}; // বর্তমানে সেটেল হচ্ছে এমন ব্যক্তিদের নাম
+  final Set<String> _settlingPersons = {};
 
   Future<void> _deleteTransaction(TransactionModel txn) async {
     final confirmed = await showDialog<bool>(
@@ -98,7 +98,6 @@ class _DebtHistoryScreenState extends State<DebtHistoryScreen> {
           );
         }
       } finally {
-        // স্ট্রিম আপডেট হতে সময় লাগলে বাটনটি যাতে ডিজেবল থাকে, তাই সাথে সাথে রিমুভ করছি না
         Future.delayed(const Duration(seconds: 2), () {
           if (mounted) setState(() => _settlingPersons.remove(info.name));
         });

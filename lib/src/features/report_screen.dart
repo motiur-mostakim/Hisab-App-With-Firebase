@@ -28,8 +28,6 @@ class _ReportScreenState extends State<ReportScreen>
 
   @override
   bool get wantKeepAlive => true;
-
-  // PDF ডাউনলোড এবং ফাইল সেভ করার method
   Future<void> _downloadPdfReport(List<TransactionModel> transactions) async {
     try {
       setState(() => _isGeneratingPdf = true);
@@ -76,12 +74,9 @@ class _ReportScreenState extends State<ReportScreen>
     }
   }
 
-  // File manager এ ফাইল খোলার method
   Future<void> _openFileManager(String filePath) async {
     try {
-      // Android এর জন্য Intent ব্যবহার করুন
       if (Platform.isAndroid) {
-        // File manager খুলতে share ব্যবহার করি
         await Share.shareXFiles([
           XFile(filePath),
         ], text: 'আর্থিক রিপোর্ট ডাউনলোড হয়েছে');
@@ -91,7 +86,6 @@ class _ReportScreenState extends State<ReportScreen>
     }
   }
 
-  // Email এ রিপোর্ট পাঠানোর method
   Future<void> _sendReportViaEmail(List<TransactionModel> transactions) async {
     try {
       setState(() => _isGeneratingPdf = true);
@@ -99,8 +93,6 @@ class _ReportScreenState extends State<ReportScreen>
       final filteredTransactions = _filterByReportType(transactions);
       final stats = _calculateStats(filteredTransactions);
       final categoryTotals = _getCategoryTotals(filteredTransactions, true);
-
-      // PDF generate করুন
       final file = await _reportGenerator.generatePdfReport(
         transactions: filteredTransactions,
         reportType: _reportType,
@@ -113,7 +105,6 @@ class _ReportScreenState extends State<ReportScreen>
       setState(() => _isGeneratingPdf = false);
 
       if (mounted) {
-        // Share sheet ব্যবহার করে email এ পাঠান
         await Share.shareXFiles([
           XFile(file.path),
         ], text: 'আমার আর্থিক রিপোর্ট ($_reportType)');
@@ -125,14 +116,12 @@ class _ReportScreenState extends State<ReportScreen>
     }
   }
 
-  // CSV তে export করার method
   Future<void> _exportCsvReport(List<TransactionModel> transactions) async {
     try {
       setState(() => _isGeneratingPdf = true);
 
       final filteredTransactions = _filterByReportType(transactions);
 
-      // CSV content তৈরি করুন
       String csvContent = 'তারিখ,বিভাগ,বিবরণ,ধরন,পরিমাণ\n';
 
       for (var txn in filteredTransactions) {
@@ -143,8 +132,6 @@ class _ReportScreenState extends State<ReportScreen>
         final note = txn.note ?? 'No description';
         csvContent += '$date,$category,$note,$type,${txn.amount}\n';
       }
-
-      // File save করুন
       final directory =
           await getDownloadsDirectory() ?? await getTemporaryDirectory();
       final fileName =
@@ -156,7 +143,6 @@ class _ReportScreenState extends State<ReportScreen>
 
       if (mounted) {
         _showSnackbar('CSV রিপোর্ট ডাউনলোড হয়েছে: ${file.path}');
-        // Share করুন
         await Share.shareXFiles([
           XFile(file.path),
         ], text: 'আর্থিক রিপোর্ট (CSV)');
@@ -419,7 +405,7 @@ class _ReportScreenState extends State<ReportScreen>
             _chip("বার্ষিক", _reportType == "বার্ষিক", isDark),
             const Spacer(),
             IconButton(
-              onPressed: () {}, // Share functionality
+              onPressed: () {},
               icon: Icon(
                 Icons.share,
                 color: isDark ? Colors.white70 : Colors.black54,
@@ -575,8 +561,6 @@ class _ReportScreenState extends State<ReportScreen>
   ) {
     final Map<String, Map<String, double>> history = {};
     final now = DateTime.now();
-
-    // Initialize last 6 months
     for (int i = 5; i >= 0; i--) {
       final date = DateTime(now.year, now.month - i, 1);
       final monthName = _getMonthName(date.month);

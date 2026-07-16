@@ -311,7 +311,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               const SizedBox(height: 16),
             ],
 
-            // Date Selection
             Text("তারিখ", style: TextStyle(color: secondaryTextColor)),
             const SizedBox(height: 5),
             TextField(
@@ -328,7 +327,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Description/Note
             Text("বিবরণ (ঐচ্ছিক)", style: TextStyle(color: secondaryTextColor)),
             const SizedBox(height: 5),
             TextField(

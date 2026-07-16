@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class PrayerTimeModel {
   final String id;
   final String name;
-  final String time; // e.g., "05:30 AM"
+  final String time;
   final bool isNotificationEnabled;
 
   PrayerTimeModel({

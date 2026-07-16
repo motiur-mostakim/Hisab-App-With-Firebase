@@ -29,7 +29,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       } else {
         if (equation == "0") {
           if (_isOperator(text) && text != "-") {
-            return; // Can't start with most operators
+            return;
           }
           if (_isFunction(text)) {
             equation = "$text(";
@@ -37,11 +37,9 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             equation = text;
           }
         } else {
-          // Handle operator replacement
           if (_isOperator(text) && _isOperator(equation.substring(equation.length - 1))) {
             equation = equation.substring(0, equation.length - 1) + text;
           } else if (text == ".") {
-            // Prevent multiple dots in one number
             String lastPart = equation.split(RegExp(r'[+\-×÷%^()]')).last;
             if (lastPart.contains(".")) return;
             equation += text;
@@ -51,7 +49,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
             equation += text;
           }
         }
-        // Auto-evaluate as we type for a better experience
         evaluate(finalEval: false);
       }
     });
@@ -73,11 +70,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       exp = exp.replaceAll("π", math.pi.toString());
       exp = exp.replaceAll("e", math.e.toString());
       exp = exp.replaceAll("%", "/100");
-      
-      // Handle log as base 10: log(x) -> log(10, x)
       exp = exp.replaceAll("log(", "log(10,");
-
-      // Auto-close parentheses
       int openParen = "(".allMatches(exp).length;
       int closeParen = ")".allMatches(exp).length;
       while (openParen > closeParen) {
@@ -85,7 +78,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
         closeParen++;
       }
 
-      // Factorial handling (basic)
       RegExp factorialRegex = RegExp(r"(\d+)\!");
       exp = exp.replaceAllMapped(factorialRegex, (Match m) {
         int n = int.parse(m.group(1)!);
@@ -101,8 +93,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       if (res.endsWith(".0")) {
         res = res.substring(0, res.length - 2);
       }
-      
-      // Format long numbers
       if (res.length > 15) {
         res = eval.toStringAsExponential(4);
       }
@@ -117,7 +107,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       if (finalEval) {
         result = "Error";
       }
-      // If not final, we don't show error yet as equation might be incomplete
     }
   }
 
@@ -199,7 +188,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
       ),
       body: Column(
         children: [
-          /// DISPLAY
           Expanded(
             flex: 3,
             child: Container(
@@ -237,8 +225,6 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
           ),
 
           const Divider(height: 1, indent: 20, endIndent: 20),
-
-          /// BUTTON GRID
           Expanded(
             flex: 8,
             child: Container(

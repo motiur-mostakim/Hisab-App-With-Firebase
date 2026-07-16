@@ -51,7 +51,6 @@ class FcmNotificationServices {
     return prefs.getString(_tokenKey);
   }
 
-  // Manage In-App Messaging Suppression
   Future<void> setMessagesSuppressed(bool suppressed) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_suppressKey, suppressed);

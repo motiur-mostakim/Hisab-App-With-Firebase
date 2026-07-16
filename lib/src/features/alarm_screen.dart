@@ -123,8 +123,6 @@ class _AlarmScreenState extends State<AlarmScreen> {
                       ),
                     ),
                     const SizedBox(height: 25),
-
-                    /// Time & Date Picker Trigger
                     InkWell(
                       onTap: () async {
                         final pickedDate = await showDatePicker(
@@ -391,7 +389,6 @@ class _AlarmScreenState extends State<AlarmScreen> {
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
-        // স্ট্যাটাস বারের আইকন কালার ঠিক করার জন্য
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,

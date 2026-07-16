@@ -26,7 +26,6 @@ class DashboardSummaryWidget extends StatelessWidget {
 
         return Column(
           children: [
-            // --- Primary Fintech Card ---
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -47,8 +46,6 @@ class DashboardSummaryWidget extends StatelessWidget {
               ),
               child: Column(
                 children: [
-
-                  // --- Cash Balance Section ---
                   const Text(
                     "নগদ ব্যালেন্স",
                     style: TextStyle(
@@ -67,7 +64,6 @@ class DashboardSummaryWidget extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // --- Highlighted Net Worth (মোট সম্পদ) Section ---
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
@@ -107,8 +103,6 @@ class DashboardSummaryWidget extends StatelessWidget {
                   const SizedBox(height: 16),
                   const Divider(color: Colors.white24, height: 1),
                   const SizedBox(height: 16),
-
-                  // Income & Expense details inside the card
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
@@ -132,8 +126,6 @@ class DashboardSummaryWidget extends StatelessWidget {
                 ],
               ),
             ),
-
-            // --- Loan/Debt Section (Only if values exist) ---
             if (receivable > 0 || debt > 0) ...[
               const SizedBox(height: 16),
               Row(

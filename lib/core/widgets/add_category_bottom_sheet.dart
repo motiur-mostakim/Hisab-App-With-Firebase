@@ -43,7 +43,6 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              /// HANDLE
               Container(
                 width: 40,
                 height: 5,
@@ -54,8 +53,6 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
               ),
 
               const SizedBox(height: 20),
-
-              /// TITLE
               const Text(
                 "নতুন বিভাগ যোগ করুন",
                 style: TextStyle(
@@ -73,8 +70,6 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
               ),
 
               const SizedBox(height: 25),
-
-              /// INPUT
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -101,8 +96,6 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
               ),
 
               const SizedBox(height: 25),
-
-              /// ICON GRID
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -158,8 +151,6 @@ class _AddCategorySheetState extends State<AddCategorySheet> {
               ),
 
               const SizedBox(height: 30),
-
-              /// ACTION BUTTONS
               Row(
                 children: [
                   Expanded(

@@ -75,7 +75,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (userCredential.user != null) {
-        // Update display name
         await userCredential.user!.updateDisplayName(name);
         
         if (mounted) {
@@ -126,7 +125,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: SafeArea(
         child: Row(
           children: [
-            /// 🔥 LEFT SIDE (Only Web/Tablet)
             if (MediaQuery.of(context).size.width > 800)
               Expanded(
                 child: Container(
@@ -168,15 +166,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
               ),
-
-            /// 🔥 RIGHT SIDE (Form)
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    /// TITLE
                     Text(
                       "অ্যাকাউন্ট তৈরি করুন",
                       style: TextStyle(
@@ -192,8 +187,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
 
                     const SizedBox(height: 30),
-
-                    /// FORM
                     _input("পুরো নাম", Icons.person, "আপনার নাম লিখুন", controller: _nameController),
                     _input("ইমেল ঠিকানা", Icons.mail, "example@email.com", controller: _emailController),
                     _input(
@@ -214,8 +207,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
 
                     const SizedBox(height: 15),
-
-                    /// CHECKBOX
                     Row(
                       children: [
                         Checkbox(
@@ -237,8 +228,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
 
                     const SizedBox(height: 20),
-
-                    /// BUTTON
                     InkWell(
                       onTap: _isLoading ? null : _register,
                       child: Container(
@@ -273,8 +262,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
 
                     const SizedBox(height: 25),
-
-                    /// LOGIN LINK
                     Center(
                       child: InkWell(
                         onTap: () => Navigator.pop(context),
@@ -304,8 +291,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
-
-  /// 🔥 INPUT FIELD
   Widget _input(
     String label,
     IconData icon,

@@ -35,14 +35,11 @@ class FCMService {
   final FcmNotificationServices _storage = FcmNotificationServices();
 
   Future<void> init() async {
-    // 1. Request permission for push notifications
     await _fcm.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
-
-    // 2. Configure In-App Messaging
     await _fiam.setMessagesSuppressed(false);
     await _fiam.setAutomaticDataCollectionEnabled(true);
 
@@ -83,7 +80,6 @@ class FCMService {
 
         await _storage.saveNotification(model);
 
-        // Handle Image if present
         String? imageUrl = notification.android?.imageUrl ?? notification.apple?.imageUrl;
         
         BigPictureStyleInformation? bigPictureStyleInformation;

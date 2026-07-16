@@ -55,7 +55,7 @@ class PrayerService {
         "নামাজের সময় হয়েছে",
         "${prayer.name} এর সময় হয়েছে। নামাজ পড়তে ভুলবেন না।",
         scheduledDate,
-        soundName: 'azan_rington', // Assuming sound_alarm exists or mapped to a ringtone
+        soundName: 'azan_rington',
       );
     } catch (e) {
       debugPrint("Error scheduling prayer notification: $e");

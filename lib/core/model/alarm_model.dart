@@ -4,7 +4,7 @@ class AlarmModel {
   final String id;
   final String label;
   final DateTime dateTime;
-  final List<int> repeatDays; // 1 (Mon) to 7 (Sun)
+  final List<int> repeatDays;
   final bool isActive;
 
   AlarmModel({

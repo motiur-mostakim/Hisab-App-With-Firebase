@@ -18,7 +18,7 @@ void main() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final notificationService = NotificationService();
   notificationService.initNotification();
-  FCMService().init();
+ await FCMService().init();
   final notes = await NoteServicesForLocalDatabase().getNotes();
  await notificationService.restoreAlarms(notes);
   runApp(const MyApp());

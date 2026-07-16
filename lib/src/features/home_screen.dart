@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:hisab_app/core/services/FCM_services.dart';
 import 'package:hisab_app/core/services/fcm_notification_services.dart';
 import 'package:hisab_app/src/features/notification_screen.dart';
 import 'package:hisab_app/src/features/widgets/dashboard_summary_widget.dart';
@@ -30,6 +31,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   void initState() {
     super.initState();
     _loadNotificationCount();
+    FCMService().triggerInAppEvent("home_screen");
   }
 
   double _getMonthlyExpense(List<TransactionModel> transactions) {
